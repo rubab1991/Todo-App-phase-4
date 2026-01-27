@@ -17,18 +17,37 @@ async function apiRequest<T>(
   user_id: string,
   token?: string  // Optional token parameter to support JWT auth
 ): Promise<T> {
-  // Construct URL - the endpoint now contains the full path with user_id
+  // Construct URL - the endpoint now contains the path without user_id in URL
   const url = `${API_BASE_URL}${endpoint}`;
 
   // Get token from localStorage if not provided
   const authToken = token || (typeof window !== 'undefined' ? localStorage.getItem('auth-token') : null);
 
+  // Clone options to avoid mutating the original
+  const clonedOptions = { ...options };
+
+  // For non-GET requests, add user_id to the request body if not already present
+  if (clonedOptions.method && clonedOptions.method !== 'GET' && clonedOptions.body) {
+    try {
+      const parsedBody = JSON.parse(clonedOptions.body as string);
+      // Add user_id to body if it's not already there and user_id is provided
+      if (!parsedBody.userId && user_id) {
+        parsedBody.userId = user_id;
+      }
+      clonedOptions.body = JSON.stringify(parsedBody);
+    } catch (e) {
+      // If body is not JSON, we can't modify it
+      console.warn('Request body is not valid JSON, unable to add userId');
+    }
+  }
+
   const config: RequestInit = {
-    ...options,
+    ...clonedOptions,
     headers: {
       'Content-Type': 'application/json',
+      'X-User-ID': user_id, // Add user_id as a header which can be read by backend
       ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {}),
-      ...options.headers,
+      ...clonedOptions.headers,
     },
   };
 
@@ -66,14 +85,14 @@ export const taskApi = {
    * Get all tasks for a user
    */
   async getAllTasks(user_id: string, token?: string): Promise<Task[]> {
-    return apiRequest<Task[]>(`/users/${user_id}/tasks`, { method: 'GET' }, user_id, token);
+    return apiRequest<Task[]>(`/tasks`, { method: 'GET' }, user_id, token);
   },
 
   /**
    * Create a new task
    */
   async createTask(user_id: string, taskData: Omit<Task, 'id' | 'userId' | 'createdAt' | 'updatedAt'>, token?: string): Promise<Task> {
-    return apiRequest<Task>(`/users/${user_id}/tasks`, {
+    return apiRequest<Task>(`/tasks`, {
       method: 'POST',
       body: JSON.stringify(taskData),
     }, user_id, token);
@@ -83,14 +102,14 @@ export const taskApi = {
    * Get a specific task by ID
    */
   async getTaskById(user_id: string, taskId: string, token?: string): Promise<Task> {
-    return apiRequest<Task>(`/users/${user_id}/tasks/${taskId}`, { method: 'GET' }, user_id, token);
+    return apiRequest<Task>(`/tasks/${taskId}`, { method: 'GET' }, user_id, token);
   },
 
   /**
    * Update a task
    */
   async updateTask(user_id: string, taskId: string, taskData: Partial<Task>, token?: string): Promise<Task> {
-    return apiRequest<Task>(`/users/${user_id}/tasks/${taskId}`, {
+    return apiRequest<Task>(`/tasks/${taskId}`, {
       method: 'PUT',
       body: JSON.stringify(taskData),
     }, user_id, token);
@@ -100,14 +119,14 @@ export const taskApi = {
    * Delete a task
    */
   async deleteTask(user_id: string, taskId: string, token?: string): Promise<void> {
-    await apiRequest<void>(`/users/${user_id}/tasks/${taskId}`, { method: 'DELETE' }, user_id, token);
+    await apiRequest<void>(`/tasks/${taskId}`, { method: 'DELETE' }, user_id, token);
   },
 
   /**
    * Toggle task completion status
    */
   async toggleTaskCompletion(user_id: string, taskId: string, token?: string): Promise<Task> {
-    return apiRequest<Task>(`/users/${user_id}/tasks/${taskId}/complete`, {
+    return apiRequest<Task>(`/tasks/${taskId}/complete`, {
       method: 'PATCH',
     }, user_id, token);
   },
