@@ -1,0 +1,219 @@
+{
+  "manifest": {
+    "version": "1.0.0",
+    "name": "todo-ai-chat-agent",
+    "description": "AI assistant for managing todo application functionality through natural language",
+    "author": "Spec-Driven Development Team",
+    "contact": "info@example.com"
+  },
+  "tools": [
+    {
+      "name": "add_task",
+      "description": "Create a new task",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "description": "ID of the authenticated user"
+          },
+          "title": {
+            "type": "string",
+            "description": "Task title"
+          },
+          "description": {
+            "type": "string",
+            "description": "Optional task description"
+          }
+        },
+        "required": ["user_id", "title"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "description": "ID of the created task"
+          },
+          "status": {
+            "type": "string",
+            "description": "Status of the operation"
+          },
+          "title": {
+            "type": "string",
+            "description": "Title of the created task"
+          }
+        }
+      }
+    },
+    {
+      "name": "list_tasks",
+      "description": "List tasks with optional filter",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "description": "ID of the authenticated user"
+          },
+          "status": {
+            "type": "string",
+            "description": "Filter by status ('all', 'pending', 'completed')",
+            "enum": ["all", "pending", "completed"],
+            "default": "all"
+          }
+        },
+        "required": ["user_id"]
+      },
+      "output_schema": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Task ID"
+            },
+            "title": {
+              "type": "string",
+              "description": "Task title"
+            },
+            "description": {
+              "type": "string",
+              "description": "Task description"
+            },
+            "isComplete": {
+              "type": "boolean",
+              "description": "Whether the task is completed"
+            },
+            "userId": {
+              "type": "string",
+              "description": "User ID associated with the task"
+            },
+            "createdAt": {
+              "type": "string",
+              "description": "Creation timestamp"
+            },
+            "updatedAt": {
+              "type": "string",
+              "description": "Last update timestamp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "complete_task",
+      "description": "Mark a task as complete",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "description": "ID of the authenticated user"
+          },
+          "task_id": {
+            "type": "string",
+            "description": "ID of the task to complete"
+          }
+        },
+        "required": ["user_id", "task_id"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "description": "ID of the completed task"
+          },
+          "status": {
+            "type": "string",
+            "description": "Status of the operation"
+          },
+          "title": {
+            "type": "string",
+            "description": "Title of the completed task"
+          }
+        }
+      }
+    },
+    {
+      "name": "delete_task",
+      "description": "Delete a task",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "description": "ID of the authenticated user"
+          },
+          "task_id": {
+            "type": "string",
+            "description": "ID of the task to delete"
+          }
+        },
+        "required": ["user_id", "task_id"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "description": "ID of the deleted task"
+          },
+          "status": {
+            "type": "string",
+            "description": "Status of the operation"
+          },
+          "title": {
+            "type": "string",
+            "description": "Title of the deleted task"
+          }
+        }
+      }
+    },
+    {
+      "name": "update_task",
+      "description": "Update task title or description",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "description": "ID of the authenticated user"
+          },
+          "task_id": {
+            "type": "string",
+            "description": "ID of the task to update"
+          },
+          "title": {
+            "type": "string",
+            "description": "New task title (optional)"
+          },
+          "description": {
+            "type": "string",
+            "description": "New task description (optional)"
+          }
+        },
+        "required": ["user_id", "task_id"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "description": "ID of the updated task"
+          },
+          "status": {
+            "type": "string",
+            "description": "Status of the operation"
+          },
+          "title": {
+            "type": "string",
+            "description": "Title of the updated task"
+          }
+        }
+      }
+    }
+  ]
+}
