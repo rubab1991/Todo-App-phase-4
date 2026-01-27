@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import React, { createElement, createContext, useContext, useEffect, useState } from 'react';
 import { UserSession } from '@/types';
 import {
   signIn as customSignIn,
@@ -65,7 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const result = await customSignIn(email, password);
 
-      if (result.success && result.user) {
+      if (result.success && result.user && result.token) {
         const userSession: UserSession = {
           id: result.user.id,
           email: result.user.email,
@@ -92,7 +92,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const result = await customSignUp(email, password);
 
-      if (result.success && result.user) {
+      if (result.success && result.user && result.token) {
         const userSession: UserSession = {
           id: result.user.id,
           email: result.user.email,
@@ -127,20 +127,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  return (
-    <AuthContext.Provider
-      value={{
-        session,
-        loading,
-        authStatus,
-        signIn,
-        signUp,
-        signOut,
-        isAuthenticated: authStatus === 'authenticated',
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+  const value = {
+    session,
+    loading,
+    authStatus,
+    signIn,
+    signUp,
+    signOut,
+    isAuthenticated: authStatus === 'authenticated',
+  };
+
+  return createElement(
+    AuthContext.Provider,
+    { value },
+    children
   );
 }
 
