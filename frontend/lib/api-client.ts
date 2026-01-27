@@ -85,14 +85,14 @@ export const taskApi = {
    * Get all tasks for a user
    */
   async getAllTasks(user_id: string, token?: string): Promise<Task[]> {
-    return apiRequest<Task[]>(`/tasks`, { method: 'GET' }, user_id, token);
+    return apiRequest<Task[]>(`/${user_id}/tasks`, { method: 'GET' }, user_id, token);
   },
 
   /**
    * Create a new task
    */
   async createTask(user_id: string, taskData: Omit<Task, 'id' | 'userId' | 'createdAt' | 'updatedAt'>, token?: string): Promise<Task> {
-    return apiRequest<Task>(`/tasks`, {
+    return apiRequest<Task>(`/${user_id}/tasks`, {
       method: 'POST',
       body: JSON.stringify(taskData),
     }, user_id, token);
@@ -102,14 +102,14 @@ export const taskApi = {
    * Get a specific task by ID
    */
   async getTaskById(user_id: string, taskId: string, token?: string): Promise<Task> {
-    return apiRequest<Task>(`/tasks/${taskId}`, { method: 'GET' }, user_id, token);
+    return apiRequest<Task>(`/${user_id}/tasks/${taskId}`, { method: 'GET' }, user_id, token);
   },
 
   /**
    * Update a task
    */
   async updateTask(user_id: string, taskId: string, taskData: Partial<Task>, token?: string): Promise<Task> {
-    return apiRequest<Task>(`/tasks/${taskId}`, {
+    return apiRequest<Task>(`/${user_id}/tasks/${taskId}`, {
       method: 'PUT',
       body: JSON.stringify(taskData),
     }, user_id, token);
@@ -119,14 +119,14 @@ export const taskApi = {
    * Delete a task
    */
   async deleteTask(user_id: string, taskId: string, token?: string): Promise<void> {
-    await apiRequest<void>(`/tasks/${taskId}`, { method: 'DELETE' }, user_id, token);
+    await apiRequest<void>(`/${user_id}/tasks/${taskId}`, { method: 'DELETE' }, user_id, token);
   },
 
   /**
    * Toggle task completion status
    */
   async toggleTaskCompletion(user_id: string, taskId: string, token?: string): Promise<Task> {
-    return apiRequest<Task>(`/tasks/${taskId}/complete`, {
+    return apiRequest<Task>(`/${user_id}/tasks/${taskId}/complete`, {
       method: 'PATCH',
     }, user_id, token);
   },
