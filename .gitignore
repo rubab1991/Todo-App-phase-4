@@ -1,0 +1,74 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+.venv/
+env.bak/
+venv.bak/
+.ENV/
+
+# Build results
+dist/
+build/
+develop-eggs/
+.installed.cfg
+.egg/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment variables
+.env*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Coverage
+.coverage
+coverage/
+
+# Local configuration
+.local/
+.settings/
+
+# Next.js
+.next/
+out/
+
+# Python
+*.egg-info/
+.eggs/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage*
+
+# Database
+*.db
+*.db-journal
+
+# Backend specific
+backend/venv/
+backend/__pycache__/
+backend/*.pyc
