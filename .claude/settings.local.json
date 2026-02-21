@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build)",
+      "Bash(python -c \"from src.api.main import app; print\\(''Backend import successful''\\)\")"
+    ]
+  }
+}
