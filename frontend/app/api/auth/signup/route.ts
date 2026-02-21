@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server';
 import { SignJWT } from 'jose';
+import crypto from 'crypto';
 
 export async function POST(request: Request) {
   try {
     const { email, password } = await request.json();
 
-    // In a real implementation, you'd create a user in the database
-    // For this demo, we'll just generate a token for the new user
-    const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    // Generate a deterministic user ID from email so the same user always gets the same ID
+    const hash = crypto.createHash('sha256').update(email.toLowerCase().trim()).digest('hex').substring(0, 16);
+    const userId = `user_${hash}`;
 
     // Get the secret from environment variables
     const secret = process.env.BETTER_AUTH_SECRET || process.env.NEXT_PUBLIC_API_SECRET || 'BG08QhrY6XrSET9ZDVXdYyYyDwYPgas1';

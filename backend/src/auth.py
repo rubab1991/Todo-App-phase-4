@@ -1,18 +1,19 @@
 from fastapi import HTTPException, Depends, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-import os
 import jose.jwt
-from .db import get_async_session_dep
-from .db import get_or_create_user
+from .config import settings
 
 security = HTTPBearer()
 
 def decode_jwt_token(token: str, secret: str):
-    return jose.jwt.decode(token, secret, algorithms=["HS256"])
+    try:
+        return jose.jwt.decode(token, secret, algorithms=["HS256"])
+    except jose.JWTError:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
 
 async def get_current_user_id(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
     token = credentials.credentials
-    secret = os.getenv("BETTER_AUTH_SECRET")
+    secret = settings.better_auth_secret
     if not secret:
         raise HTTPException(status_code=500, detail="JWT secret not configured")
     payload = decode_jwt_token(token, secret)
@@ -25,7 +26,7 @@ async def get_current_user_id(credentials: HTTPAuthorizationCredentials = Depend
 async def get_current_user_info(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
     """Get both user ID and email from the token"""
     token = credentials.credentials
-    secret = os.getenv("BETTER_AUTH_SECRET")
+    secret = settings.better_auth_secret
     if not secret:
         raise HTTPException(status_code=500, detail="JWT secret not configured")
     payload = decode_jwt_token(token, secret)

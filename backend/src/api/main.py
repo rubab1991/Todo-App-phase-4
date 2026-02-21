@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from src.routes import tasks  # <- import tasks router specifically
+from ..api.chat_router import router as chat_router  # <- import chat router
 from src import db  # <- import db module
 
 logging.basicConfig(level=logging.INFO)
@@ -31,6 +32,7 @@ app.add_middleware(
 )
 
 app.include_router(tasks.router, prefix="/api", tags=["tasks"])
+app.include_router(chat_router, prefix="/api/{user_id}", tags=["chat"])
 
 @app.get("/")
 async def root():

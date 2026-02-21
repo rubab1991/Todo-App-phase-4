@@ -1,0 +1,49 @@
+# Helm Values Contract: todo-frontend
+# This defines the expected values.yaml structure for the frontend Helm chart
+
+replicaCount: 2
+
+image:
+  repository: todo-frontend
+  tag: v1
+  pullPolicy: IfNotPresent
+
+service:
+  type: NodePort
+  port: 3000
+  targetPort: 3000
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+env:
+  # Non-sensitive values from ConfigMap
+  config:
+    NEXT_PUBLIC_API_BASE_URL: "http://todo-backend:8000/api"
+    NEXT_PUBLIC_BETTER_AUTH_URL: "http://todo-frontend:3000"
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  allowPrivilegeEscalation: false
+
+containerPort: 3000
+
+livenessProbe:
+  httpGet:
+    path: /
+    port: 3000
+  initialDelaySeconds: 15
+  periodSeconds: 30
+
+readinessProbe:
+  httpGet:
+    path: /
+    port: 3000
+  initialDelaySeconds: 10
+  periodSeconds: 10

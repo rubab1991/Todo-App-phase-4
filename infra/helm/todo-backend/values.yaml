@@ -1,0 +1,50 @@
+replicaCount: 2
+
+image:
+  repository: todo-backend
+  tag: v1
+  pullPolicy: Never
+
+service:
+  type: NodePort
+  port: 8000
+  targetPort: 8000
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+env:
+  config:
+    DEBUG: "false"
+    LOG_LEVEL: "info"
+    BETTER_AUTH_URL: "http://todo-frontend:3000"
+  secrets:
+    - NEON_DB_URL
+    - BETTER_AUTH_SECRET
+    - COHERE_API_KEY
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  allowPrivilegeEscalation: false
+
+containerPort: 8000
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 8000
+  initialDelaySeconds: 10
+  periodSeconds: 30
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 8000
+  initialDelaySeconds: 5
+  periodSeconds: 10

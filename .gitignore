@@ -72,3 +72,25 @@ pip-delete-this-directory.txt
 backend/venv/
 backend/__pycache__/
 backend/*.pyc
+
+# FastAPI/Swagger
+backend/swagger/
+backend/redoc/
+
+# Better Auth
+.auth/
+
+# MCP Server
+.mcp/
+
+# Cohere API keys
+**/COHERE_API_KEY*
+**/BETTER_AUTH_SECRET*
+
+# Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/public/dist/
+frontend/public/build/

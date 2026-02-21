@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: todo-frontend-config
+  labels:
+    {{- include "todo-frontend.labels" . | nindent 4 }}
+data:
+  NEXT_PUBLIC_API_BASE_URL: {{ .Values.env.config.NEXT_PUBLIC_API_BASE_URL | quote }}
+  NEXT_PUBLIC_BETTER_AUTH_URL: {{ .Values.env.config.NEXT_PUBLIC_BETTER_AUTH_URL | quote }}

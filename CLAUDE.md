@@ -208,3 +208,11 @@ Wait for consent; never auto-create ADRs. Group related decisions (stacks, authe
 
 ## Code Standards
 See `.specify/memory/constitution.md` for code quality, testing, performance, security, and architecture principles.
+
+## Recent Changes
+- 004-k8s-local-deployment: Added Python 3.11 (backend), Node.js 20 / TypeScript 5.9 (frontend) + FastAPI 0.104.1, SQLModel 0.0.16, Next.js 16.1.3, React 19.2.3, Cohere 5.5.4, OpenAI 1.3.5, Better Auth 0.2.0
+- 001-backend-fix-integration: Added [if applicable, e.g., PostgreSQL, CoreData, files or N/A]
+
+## Active Technologies
+- Python 3.11 (backend), Node.js 20 / TypeScript 5.9 (frontend) + FastAPI 0.104.1, SQLModel 0.0.16, Next.js 16.1.3, React 19.2.3, Cohere 5.5.4, OpenAI 1.3.5, Better Auth 0.2.0 (004-k8s-local-deployment)
+- Neon Serverless PostgreSQL (external, accessed via asyncpg) (004-k8s-local-deployment)

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Navbar } from './navbar';
+import ChatContainer from '@/src/components/ChatContainer';
 
 // Wrapper component to handle client-side rendering of Navbar
 // This prevents hydration mismatches when Navbar uses client-side auth state
@@ -30,5 +31,10 @@ export function NavbarWrapper() {
   }
 
   // Render the full Navbar component after client-side hydration
-  return <Navbar />;
+  return (
+    <>
+      <Navbar />
+      <ChatContainer />
+    </>
+  );
 }

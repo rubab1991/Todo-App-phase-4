@@ -29,6 +29,17 @@ export default function TasksPage() {
     }
   }, [session]);
 
+  // Refetch tasks when chatbot creates/updates/deletes a task
+  useEffect(() => {
+    const handleTasksUpdated = () => {
+      if (session?.isLoggedIn && session.id) {
+        fetchTasks();
+      }
+    };
+    window.addEventListener('tasks-updated', handleTasksUpdated);
+    return () => window.removeEventListener('tasks-updated', handleTasksUpdated);
+  }, [session]);
+
   const fetchTasks = async () => {
     if (!session?.id) return;
 
@@ -47,8 +58,15 @@ export default function TasksPage() {
   // Show loading state while authentication is being resolved
   if (authStatus === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-xl text-gray-700">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
+        <div className="fixed inset-0 bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 -z-10" />
+        <div className="fixed inset-0 bg-gradient-to-tr from-purple-100/20 via-transparent to-blue-100/20 -z-10" />
+        <div className="backdrop-blur-md bg-white/70 border border-white/20 rounded-2xl shadow-2xl p-12">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin" />
+            <p className="text-xl font-semibold text-gray-800">Loading...</p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -56,8 +74,20 @@ export default function TasksPage() {
   // Show unauthenticated state only when we're certain the user is not authenticated
   if (authStatus === 'unauthenticated') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-xl text-gray-700">Please sign in to view tasks</div>
+      <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
+        <div className="fixed inset-0 bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 -z-10" />
+        <div className="fixed inset-0 bg-gradient-to-tr from-purple-100/20 via-transparent to-blue-100/20 -z-10" />
+        <div className="backdrop-blur-md bg-white/70 border border-white/20 rounded-2xl shadow-2xl p-12 max-w-md text-center">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-20 h-20 bg-gradient-to-br from-purple-600/20 to-blue-500/20 rounded-full flex items-center justify-center">
+              <svg className="w-10 h-10 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <p className="text-xl font-semibold text-gray-800">Authentication Required</p>
+            <p className="text-sm text-gray-600">Please sign in to view your tasks</p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -165,82 +195,128 @@ export default function TasksPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Navbar */}
-      <nav className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Modern Gradient Background */}
+      <div className="fixed inset-0 bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 -z-10" />
+      <div className="fixed inset-0 bg-gradient-to-tr from-purple-100/20 via-transparent to-blue-100/20 -z-10" />
+
+      {/* Animated Background Orbs */}
+      <div className="fixed top-0 left-0 w-96 h-96 bg-gradient-to-br from-purple-400/30 to-blue-400/30 rounded-full blur-3xl -z-10 animate-pulse" />
+      <div className="fixed bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-[#1BFFFF]/30 to-cyan-400/30 rounded-full blur-3xl -z-10 animate-pulse" style={{ animationDelay: '1s' }} />
+
+      {/* Premium Navbar */}
+      <nav className="backdrop-blur-md bg-white/70 border-b border-white/20 shadow-lg sticky top-0 z-50">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <h1 className="text-2xl font-bold text-gray-900">Todo App</h1>
-            <button
+            <motion.h1
+              className="text-2xl font-bold bg-gradient-to-r from-purple-600 via-blue-600 to-blue-500 bg-clip-text text-transparent"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              ✨ Todo App
+            </motion.h1>
+            <motion.button
               onClick={signOut}
-              className="px-4 py-2 rounded-md text-gray-700 font-medium hover:bg-gray-100 hover:text-gray-900 transition"
+              className="px-5 py-2.5 rounded-xl font-medium text-gray-700 bg-white/80 hover:bg-white border border-gray-200/50 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
               Sign out
-            </button>
+            </motion.button>
           </div>
         </div>
       </nav>
 
       {/* Main Content */}
-      <main className="py-8">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+      <main className="py-8 sm:py-12">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
 
           {/* Header + Add Button */}
-          <div className="flex justify-between items-center mb-4">
-            <motion.h2
-              className="text-xl font-semibold text-gray-900"
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.5 }}
             >
-              My Tasks
-            </motion.h2>
+              <h2 className="text-3xl font-bold text-gray-800">My Tasks</h2>
+              <p className="text-sm text-gray-500 mt-1">Manage your tasks efficiently</p>
+            </motion.div>
 
             <motion.button
               onClick={handleAddTask}
-              className="px-4 py-2 rounded-md bg-gray-900 text-white font-medium hover:bg-gray-800 transition"
-              whileHover={{ scale: 1.05 }}
+              className="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-blue-500 text-white font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 flex items-center gap-2"
+              whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5 }}
             >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
               Add Task
             </motion.button>
           </div>
 
-          {/* Filter Controls */}
+          {/* Filter Controls - Glassmorphism Card */}
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3, delay: 0.1 }}
-            className="mb-6" // spacing between SortBy and task list
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
           >
             <FilterControls config={filterConfig} onConfigChange={setFilterConfig} />
           </motion.div>
 
-          {/* Task Form */}
+          {/* Task Form - Premium Card */}
           {showForm && (
             <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-              className="mb-6"
+              initial={{ opacity: 0, scale: 0.95, y: -20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: -20 }}
+              transition={{ duration: 0.3, type: "spring", stiffness: 300, damping: 30 }}
             >
               <TaskForm task={editingTask || undefined} onSave={handleSaveTask} onCancel={handleCancelForm} />
             </motion.div>
           )}
 
-          {/* Task List */}
+          {/* Task List - Premium Container */}
           {loading ? (
-            <div className="text-center py-10 text-gray-500">Loading tasks...</div>
+            <motion.div
+              className="backdrop-blur-md bg-white/60 border border-white/20 rounded-2xl shadow-2xl p-12 text-center"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+            >
+              <div className="flex flex-col items-center gap-4">
+                <div className="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full animate-spin" />
+                <p className="text-gray-600 font-medium">Loading your tasks...</p>
+              </div>
+            </motion.div>
           ) : filteredAndSortedTasks.length === 0 ? (
-            <div className="text-center py-10 text-gray-500">No tasks found. Create your first task!</div>
+            <motion.div
+              className="backdrop-blur-md bg-white/60 border border-white/20 rounded-2xl shadow-2xl p-12 text-center"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <div className="flex flex-col items-center gap-4">
+                <div className="w-20 h-20 bg-gradient-to-br from-purple-600/20 to-blue-500/20 rounded-full flex items-center justify-center">
+                  <svg className="w-10 h-10 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                </div>
+                <p className="text-gray-600 font-medium text-lg">No tasks found</p>
+                <p className="text-gray-500 text-sm">Create your first task to get started!</p>
+              </div>
+            </motion.div>
           ) : (
-            <div className="space-y-3">
-              {filteredAndSortedTasks.map(task => (
+            <div className="space-y-4">
+              {filteredAndSortedTasks.map((task, index) => (
                 <motion.div
                   key={task.id}
-                  initial={{ opacity: 0, y: 5 }}
+                  initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -5 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
                   layout
                 >
                   <TaskCard

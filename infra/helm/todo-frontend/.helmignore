@@ -1,0 +1,13 @@
+# Patterns to ignore when building packages
+.git
+.gitignore
+*.secret.yaml
+secrets/
+.kube/
+kubeconfig*
+*.key
+*.crt
+*.tmp
+.DS_Store
+Thumbs.db
+*.log

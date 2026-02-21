@@ -1,0 +1,61 @@
+# Git
+.git/
+.gitignore
+
+# Dependencies (will be installed in container)
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+env/
+
+# Build artifacts
+.next/
+out/
+dist/
+build/
+*.egg-info/
+
+# Environment files (secrets injected at runtime)
+.env*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation and specs (not needed in containers)
+specs/
+history/
+.specify/
+docs/
+*.md
+!requirements.txt
+
+# Tests
+tests/
+coverage/
+.coverage
+
+# Docker files themselves
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Infrastructure (not needed inside containers)
+infra/
+deploy/
+
+# Logs
+*.log
+
+# Database files
+*.db
+*.db-journal

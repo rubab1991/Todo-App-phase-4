@@ -35,82 +35,95 @@ export function FilterControls({ config, onConfigChange }: FilterControlsProps) 
   };
 
   return (
-    <div className="bg-soft-white border border-gray-200 rounded-md shadow-subtle mb-6 p-4">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div className="backdrop-blur-md bg-white/70 border border-white/20 rounded-2xl shadow-xl p-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         {/* Filter by completion status */}
         <div>
-          <label className="block text-small font-medium text-gray-500 mb-1">Filter</label>
-          <div className="flex space-x-1">
+          <label className="block text-sm font-semibold text-gray-700 mb-2.5">Filter Status</label>
+          <div className="flex gap-2">
             <button
               onClick={() => handleFilterChange('all')}
-              className={`px-3 py-1.5 text-small rounded-md ${
+              className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
                 config.filterBy === 'all'
-                  ? 'bg-gray-900 text-soft-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-gradient-to-r from-purple-600 to-blue-500 text-white shadow-md scale-105'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-105'
               }`}
             >
               All
             </button>
             <button
               onClick={() => handleFilterChange('active')}
-              className={`px-3 py-1.5 text-small rounded-md ${
+              className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
                 config.filterBy === 'active'
-                  ? 'bg-gray-900 text-soft-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-gradient-to-r from-purple-600 to-blue-500 text-white shadow-md scale-105'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-105'
               }`}
             >
               Active
             </button>
             <button
               onClick={() => handleFilterChange('completed')}
-              className={`px-3 py-1.5 text-small rounded-md ${
+              className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
                 config.filterBy === 'completed'
-                  ? 'bg-gray-900 text-soft-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-gradient-to-r from-purple-600 to-blue-500 text-white shadow-md scale-105'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-105'
               }`}
             >
-              Completed
+              Done
             </button>
           </div>
         </div>
 
         {/* Sort by */}
         <div>
-          <label className="block text-small font-medium text-gray-500 mb-1">Sort By</label>
-          <select
-            value={config.sortBy}
-            onChange={(e) => handleSortChange(e.target.value as any)}
-            className="w-full px-3 py-2 bg-soft-white border border-gray-200 rounded-md shadow-subtle focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent text-small text-gray-900"
-          >
-            <option value="dueDate">Due Date</option>
-            <option value="priority">Priority</option>
-            <option value="createdAt">Created At</option>
-            <option value="title">Title</option>
-          </select>
+          <label className="block text-sm font-semibold text-gray-700 mb-2.5">Sort By</label>
+          <div className="relative">
+            <select
+              value={config.sortBy}
+              onChange={(e) => handleSortChange(e.target.value as any)}
+              className="w-full px-4 py-2.5 bg-white/80 border border-gray-200 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent text-sm font-medium text-gray-900 hover:border-gray-300 transition-all duration-200 cursor-pointer appearance-none"
+            >
+              <option value="dueDate">📅 Due Date</option>
+              <option value="priority">⭐ Priority</option>
+              <option value="createdAt">🕒 Created At</option>
+              <option value="title">🔤 Title</option>
+            </select>
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+              <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
         </div>
 
         {/* Sort Order */}
         <div>
-          <label className="block text-small font-medium text-gray-500 mb-1">Order</label>
-          <div className="flex space-x-1">
+          <label className="block text-sm font-semibold text-gray-700 mb-2.5">Order</label>
+          <div className="flex gap-2">
             <button
               onClick={() => handleSortOrderChange('asc')}
-              className={`px-3 py-1.5 text-small rounded-md ${
+              className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 flex items-center justify-center gap-1 ${
                 config.sortOrder === 'asc'
-                  ? 'bg-gray-900 text-soft-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-gradient-to-r from-purple-600 to-blue-500 text-white shadow-md scale-105'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-105'
               }`}
             >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+              </svg>
               Asc
             </button>
             <button
               onClick={() => handleSortOrderChange('desc')}
-              className={`px-3 py-1.5 text-small rounded-md ${
+              className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 flex items-center justify-center gap-1 ${
                 config.sortOrder === 'desc'
-                  ? 'bg-gray-900 text-soft-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-gradient-to-r from-purple-600 to-blue-500 text-white shadow-md scale-105'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-105'
               }`}
             >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
               Desc
             </button>
           </div>
@@ -118,17 +131,24 @@ export function FilterControls({ config, onConfigChange }: FilterControlsProps) 
 
         {/* Search */}
         <div>
-          <label htmlFor="search" className="block text-small font-medium text-gray-500 mb-1">
+          <label htmlFor="search" className="block text-sm font-semibold text-gray-700 mb-2.5">
             Search
           </label>
-          <input
-            type="text"
-            id="search"
-            placeholder="Search tasks..."
-            value={config.searchQuery}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            className="w-full px-3 py-2 bg-soft-white border border-gray-200 rounded-md shadow-subtle focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent text-small text-gray-900 placeholder-gray-400"
-          />
+          <div className="relative">
+            <input
+              type="text"
+              id="search"
+              placeholder="Search tasks..."
+              value={config.searchQuery}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 bg-white/80 border border-gray-200 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent text-sm text-gray-900 placeholder-gray-400 hover:border-gray-300 transition-all duration-200"
+            />
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+          </div>
         </div>
       </div>
     </div>
