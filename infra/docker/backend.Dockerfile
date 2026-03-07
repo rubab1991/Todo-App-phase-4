@@ -13,6 +13,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application source
 COPY backend/src ./src
+COPY backend/app ./app
 
 # Create non-root user
 RUN useradd --create-home --uid 1000 appuser
@@ -20,4 +21,4 @@ USER appuser
 
 EXPOSE 8000
 
-CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

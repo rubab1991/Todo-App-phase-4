@@ -8,6 +8,8 @@ import { TaskForm } from '@/components/tasks/task-form';
 import { FilterControls } from '@/components/tasks/filter-controls';
 import { Task, FilterSortConfig } from '@/types';
 import { taskApi } from '@/lib/api-client';
+import { getTaskWebSocket, closeTaskWebSocket } from '@/lib/websocket-client';
+import { TaskUpdateEvent } from '@/types';
 
 export default function TasksPage() {
   const { session, loading: authLoading, authStatus, signOut } = useAuth();
@@ -22,12 +24,12 @@ export default function TasksPage() {
     searchQuery: '',
   });
 
-  // Load tasks from backend when session is available
+  // Load tasks when session or filter config changes (T031/T037)
   useEffect(() => {
     if (session?.isLoggedIn && session.id) {
-      fetchTasks();
+      fetchTasks(filterConfig);
     }
-  }, [session]);
+  }, [session, filterConfig]);
 
   // Refetch tasks when chatbot creates/updates/deletes a task
   useEffect(() => {
@@ -39,17 +41,61 @@ export default function TasksPage() {
     window.addEventListener('tasks-updated', handleTasksUpdated);
     return () => window.removeEventListener('tasks-updated', handleTasksUpdated);
   }, [session]);
+  // Phase V: WebSocket real-time updates + reconnect refetch (T058/T059)
+  useEffect(() => {
+    if (!session?.isLoggedIn || !session.id || !session.token) return;
+    const wsClient = getTaskWebSocket(session.id, session.token);
+    const unsub = wsClient.subscribe((event: TaskUpdateEvent) => {
+      if (event.type === 'task_update' && event.task) {
+        if (event.event_type === 'task.deleted') {
+          setTasks(prev => prev.filter(t => t.id !== String(event.task!.id)));
+        } else if (event.event_type === 'task.created') {
+          setTasks(prev => {
+            const exists = prev.some(t => t.id === String(event.task!.id));
+            return exists ? prev : [event.task as any, ...prev];
+          });
+        } else if (event.event_type === 'task.updated') {
+          setTasks(prev => prev.map(t => t.id === String(event.task!.id) ? (event.task as any) : t));
+        }
+      }
+      if (event.type === 'reminder' && event.message) {
+        // Show browser notification if permitted
+        if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+          new Notification('Task Reminder', { body: event.message });
+        }
+      }
+    });
+    // T059: On WS reconnect, refetch full task list to catch missed events
+    const handleReconnect = () => {
+      if (session?.isLoggedIn && session.id) fetchTasks();
+    };
+    window.addEventListener('ws-reconnected', handleReconnect);
+    return () => {
+      unsub();
+      window.removeEventListener('ws-reconnected', handleReconnect);
+      closeTaskWebSocket(session.id);
+    };
+  }, [session?.isLoggedIn, session?.id]);
 
-  const fetchTasks = async () => {
+
+  // T031/T037: pass search/filter/sort params to backend
+  const fetchTasks = async (config?: FilterSortConfig) => {
     if (!session?.id) return;
+    const activeConfig = config || filterConfig;
 
     try {
       setLoading(true);
-      const fetchedTasks = await taskApi.getAllTasks(session.id, session.token);
+      const fetchedTasks = await taskApi.getAllTasks(session.id, session.token, {
+        search: activeConfig.searchQuery || undefined,
+        priority: activeConfig.filterPriority !== 'all' ? activeConfig.filterPriority : undefined,
+        tag: activeConfig.filterTag || undefined,
+        status: activeConfig.filterBy !== 'all' ? activeConfig.filterBy : undefined,
+        sort_by: activeConfig.sortBy,
+        sort_order: activeConfig.sortOrder,
+      });
       setTasks(fetchedTasks);
     } catch (error) {
       console.error('Error fetching tasks:', error);
-      // In a real app, you'd want to show an error message to the user
     } finally {
       setLoading(false);
     }

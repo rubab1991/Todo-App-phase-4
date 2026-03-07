@@ -64,12 +64,35 @@ async_engine = create_async_engine(
 )
 
 # ----------------------------
-# CREATE TABLES
+# CREATE TABLES + MIGRATIONS
 # ----------------------------
+async def _run_column_migrations(conn):
+    """
+    Idempotent column migrations for Phase V.
+    Adds new columns to existing tables if they don't already exist.
+    """
+    import logging
+    from sqlalchemy import text
+    log = logging.getLogger(__name__)
+    migrations = [
+        ("tasks", "tags",               "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS tags TEXT"),
+        ("tasks", "recurring_interval", "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS recurring_interval TEXT"),
+        ("tasks", "reminder_at",        "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS reminder_at TEXT"),
+    ]
+    for table, column, sql in migrations:
+        try:
+            await conn.execute(text(sql))
+            log.info("Migration: ensured column %s.%s exists", table, column)
+        except Exception as e:
+            log.warning("Migration skipped for %s.%s: %s", table, column, e)
+
+
 async def create_db_and_tables():
     from .models import Task, User
+    from .models.audit_log import AuditLog  # T064: ensure audit_logs table is created
     async with async_engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.create_all)
+        await _run_column_migrations(conn)
 
 
 # ----------------------------

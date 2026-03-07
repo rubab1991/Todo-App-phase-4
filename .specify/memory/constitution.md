@@ -1,174 +1,294 @@
 <!-- SYNC IMPACT REPORT
-Version change: 2.0.1 → 3.0.0
-Bump rationale: MAJOR — new phase (Phase IV) introducing containerization,
-Kubernetes governance, Helm chart requirements, and AI DevOps governance.
-This redefines the operational scope and deployment model.
+Version change: 3.0.0 → 4.0.0
+Bump rationale: MAJOR — Phase V introduces a fundamentally new architectural paradigm:
+event-driven architecture via Kafka/Redpanda, Dapr distributed runtime building blocks
+(pub/sub, state store, service invocation, jobs API, secrets management), new cloud
+deployment targets (Vercel, Render, Redpanda Cloud), GitHub Actions CI/CD pipeline,
+and advanced task features (reminders, due dates, event schema). This redefines the
+operational scope, infrastructure model, and distributed system contract.
 
 Modified principles:
-- "VI. Extensibility for Future Phases" → "VI. Extensibility and Cloud-Native Readiness"
-- Phase Boundaries updated from Phase III to Phase IV scope
+- "VI. Extensibility and Cloud-Native Readiness" → "VI. Extensibility and Event-Driven Readiness"
+- "XII. Deployment Flow" → updated to reflect Vercel + Render + Redpanda Cloud targets
+- "XIII. Observability and Debugging" → expanded with Kafka message and reminder logging
 
 Added sections:
-- VII. Declarative Infrastructure
-- VIII. Container Governance
-- IX. Kubernetes Governance
-- X. Helm Chart Governance
-- XI. AI DevOps Governance
-- XII. Deployment Flow
-- XIII. Observability and Debugging
-- Containerization Rules (Docker + Gordon)
-- Helm Chart Requirements
-- AI DevOps Governance (Gordon, kubectl-ai, Kagent)
-- Spec-Driven Infrastructure section
-- Infrastructure Security Rules
-- Phase IV Success Criteria
+- XIV. Event-Driven Architecture Governance
+- XV. Dapr Runtime Governance
+- XVI. Redpanda / Kafka Governance
+- XVII. Advanced Task Features
+- XVIII. CI/CD Pipeline Governance
+- Phase V Success Criteria
 
-Removed sections: None (all Phase III content preserved)
+Removed sections: None (all Phase IV content preserved and extended)
 
 Templates requiring updates:
-- .specify/templates/plan-template.md — ⚠ pending (Constitution Check gates
-  should reference infrastructure principles; no breaking change)
+- .specify/templates/plan-template.md — ⚠ pending (should reference Dapr + event
+  infrastructure principles; no breaking change)
+- .specify/templates/tasks-template.md — ⚠ pending (task phases should include
+  event infrastructure setup; no breaking change)
 - .specify/templates/spec-template.md — ✅ no update needed
-- .specify/templates/tasks-template.md — ⚠ pending (task phases could include
-  infrastructure setup phases; no breaking change)
 
 Follow-up TODOs: None
 -->
-# Phase IV – Todo AI Chatbot Constitution
+
+# Phase V – Advanced Event-Driven Todo Chatbot Constitution
 
 ## Core Principles
 
 ### I. Statelessness
-The backend holds no runtime memory between requests. Conversation history and tasks are persisted only in the database (Neon Serverless PostgreSQL). Every agent must rely on database state or passed parameters. This ensures scalability and fault tolerance across distributed systems.
+The backend holds no runtime memory between requests. Conversation history and tasks are
+persisted only in the database (Neon Serverless PostgreSQL). Dapr state store manages
+chatbot conversation state and temporary task cache. Every agent must rely on database
+state, Dapr state store, or passed parameters. This ensures scalability and fault
+tolerance across distributed systems.
 
 ### II. User-Centric Security
-Each action must validate the `user_id` against the authentication system (Better Auth). Users may only access or modify their own tasks and conversations. Unauthorized actions must be rejected politely, with a clear message. This maintains privacy and data isolation between users.
+Each action MUST validate the `user_id` against the authentication system (Better Auth).
+Users may only access or modify their own tasks and conversations. Unauthorized actions
+MUST be rejected politely with a clear message. Sensitive values (`COHERE_API_KEY`,
+`BETTER_AUTH_SECRET`, `DATABASE_URL`, `REDPANDA_*`) MUST be stored as Kubernetes Secrets
+and accessed via Dapr secret store abstraction. This maintains privacy and data isolation
+between users.
 
 ### III. Consistency
-All agents must ensure the frontend and backend remain consistent. Task actions must always be verified against the database. Changes in tasks (create, update, delete, complete) must be reflected in subsequent responses. This prevents state divergence between UI and data layer.
+All agents MUST ensure the frontend and backend remain consistent. Task actions MUST be
+verified against the database. Changes (create, update, delete, complete, remind) MUST be
+reflected in subsequent responses and propagated via Kafka events to all consumers. This
+prevents state divergence between the UI, data layer, and event log.
 
 ### IV. Tool-First Execution
-All task manipulations must go through MCP tools: `add_task`, `list_tasks`, `complete_task`, `delete_task`, `update_task`. Agents may never bypass tools. If multiple tools are needed (e.g., list → delete), chain them in order. This enforces proper validation and audit trails.
+All task manipulations MUST go through MCP tools: `add_task`, `list_tasks`,
+`complete_task`, `delete_task`, `update_task`. Agents MUST NOT bypass tools. If multiple
+tools are needed (e.g., list → delete), chain them in order. This enforces proper
+validation and audit trails.
 
 ### V. Spec-Driven Development
-All implementation must strictly follow written specifications in /specs. No manual coding; all code must be generated via Claude Code. Specifications serve as the single source of truth for all development activities. Every feature, API endpoint, UI element, and infrastructure component must be defined in specifications before implementation.
+All implementation MUST strictly follow written specifications in `/specs`. No manual
+coding; all code MUST be generated via Claude Code. Specifications serve as the single
+source of truth for all development activities. Every feature, API endpoint, UI element,
+infrastructure component, Dapr component, and Kafka topic MUST be defined in
+specifications before implementation.
 
-### VI. Extensibility and Cloud-Native Readiness
-Design all components to be extensible and cloud-native ready. Use modular architecture patterns that allow easy addition of new features. Maintain clean interfaces that accommodate containerized deployment without major refactoring. Follow established patterns that align with Kubernetes orchestration and Helm-based configuration management.
+### VI. Extensibility and Event-Driven Readiness
+Design all components to be extensible and event-driven ready. Use modular architecture
+patterns that allow easy addition of new event types and Dapr building blocks. Maintain
+clean interfaces that accommodate containerized deployment, Kubernetes orchestration, and
+Dapr sidecar injection without major refactoring.
 
 ### VII. Declarative Infrastructure
-All infrastructure must be defined declaratively. Deployments must be reproducible from version-controlled artifacts alone. No manual `kubectl` edits in production. Every container must be versioned and tagged. Kubernetes manifests must be Helm-managed. AI tools assist but humans validate all infrastructure changes before application.
+All infrastructure MUST be defined declaratively. Deployments MUST be reproducible from
+version-controlled artifacts alone. No manual `kubectl` edits in production. Every
+container MUST be versioned and tagged. Kubernetes manifests MUST be Helm-managed. Dapr
+components MUST be declared as YAML manifests under `dapr-components/`. AI tools assist
+but humans MUST validate all infrastructure changes before application.
 
 ### VIII. Container Governance
-Both frontend and backend must be containerized using Docker. Dockerfiles must use slim base images, expose required ports, use non-root users, and minimize layers. Docker AI Agent (Gordon) may generate Dockerfiles, but generated artifacts must be reviewed before build. If Gordon is unavailable, use Docker CLI or generate Dockerfiles via Claude Code. Images must be tagged following the convention: `todo-frontend:v<N>`, `todo-backend:v<N>`.
+Frontend and backend MUST be containerized using Docker. Dockerfiles MUST use slim base
+images, expose required ports, use non-root users, and minimize layers. Images MUST be
+tagged: `todo-frontend:v<N>`, `todo-backend:v<N>`. Docker AI Agent (Gordon) may generate
+Dockerfiles, but all generated artifacts MUST be reviewed before build.
 
 ### IX. Kubernetes Governance
-The local cluster must use Minikube. Every deployment must include Deployment, Service, ConfigMap, and Secret resources. Backend and frontend must run as separate deployments. Replica counts: frontend 2 replicas, backend 2 replicas. Resource requests and limits must be defined for all pods. No privileged containers are allowed.
+The local validation cluster MUST use Minikube with Dapr runtime installed. Every
+deployment MUST include Deployment, Service, ConfigMap, and Secret resources. Backend and
+frontend MUST run as separate deployments. Resource requests and limits MUST be defined
+for all pods. No privileged containers are allowed.
 
 ### X. Helm Chart Governance
-All Kubernetes manifests must be managed through Helm charts. Charts must support configurable replica count, image tag, and environment variables. Values must include `DATABASE_URL`, `BETTER_AUTH_SECRET`, and `COHERE_API_KEY`. Secrets must never be hardcoded in Helm templates; they must be injected via Kubernetes Secrets.
+All Kubernetes manifests MUST be managed through Helm charts. Charts MUST support
+configurable replica count, image tag, and environment variables. Values MUST include
+`DATABASE_URL`, `BETTER_AUTH_SECRET`, `COHERE_API_KEY`, and `REDPANDA_BROKERS`. Secrets
+MUST NEVER be hardcoded in Helm templates; they MUST be injected via Kubernetes Secrets
+and exposed through Dapr secret store.
 
 ### XI. AI DevOps Governance
-AI DevOps tools assist but never replace declarative infrastructure.
-- **Gordon**: Used for Dockerfile generation and optimization suggestions. Must not auto-deploy without human review.
-- **kubectl-ai**: Used for deployment suggestions, scaling, and debugging. All suggestions must be validated before execution.
-- **Kagent**: Used for cluster health analysis and resource optimization. Must not auto-modify cluster state.
+AI DevOps tools assist but MUST NOT replace declarative infrastructure.
+- **Gordon**: Used for Dockerfile generation and optimization suggestions. MUST NOT
+  auto-deploy without human review.
+- **kubectl-ai**: Used for deployment suggestions, scaling, and debugging. All
+  suggestions MUST be validated before execution.
+- **Kagent**: Used for cluster health analysis and resource optimization. MUST NOT
+  auto-modify cluster state.
 
 ### XII. Deployment Flow
-Infrastructure deployment must follow this sequence:
-1. Build Docker images
-2. Validate images locally
-3. Create Helm charts
-4. Deploy to Minikube
-5. Verify pods are running
-6. Expose frontend via Minikube service
-7. Validate chatbot functionality end-to-end
+Infrastructure deployment MUST follow this sequence:
+1. Build Docker images and validate locally
+2. Create / update Helm charts with Dapr annotations
+3. Deploy to Minikube with Dapr sidecar injection
+4. Verify pods and Dapr sidecars are running
+5. Validate Kafka event publishing via Redpanda Console
+6. Deploy backend to Render; deploy frontend to Vercel
+7. Validate chatbot functionality end-to-end (local + cloud)
 
 ### XIII. Observability and Debugging
-Use kubectl-ai for pod debugging, Kagent for cluster health, and `kubectl logs` for container log inspection. No direct container modifications are permitted. All debugging must be performed through sanctioned tooling.
+Logging MUST capture: service events, errors, Kafka message activity, and reminder
+triggers. Monitoring MUST track: service health, event throughput, and API latency. Use
+`kubectl-ai` for pod debugging, Kagent for cluster health, and `kubectl logs` for
+container log inspection. No direct container modifications are permitted in production.
+
+### XIV. Event-Driven Architecture Governance
+All significant state changes (task create, update, complete, delete, remind) MUST be
+published as events to Redpanda Kafka via Dapr pub/sub. No Kafka client libraries may be
+used directly; all event publishing MUST go through the Dapr API:
+`POST /v1.0/publish/<pubsub>/<topic>`. Every event MUST conform to the canonical Event
+Schema (see Section XVII). Consumers MUST be idempotent; duplicate events MUST be
+handled gracefully.
+
+### XV. Dapr Runtime Governance
+Dapr MUST provide the distributed runtime for the application. The following building
+blocks MUST be implemented:
+
+**Pub/Sub:** Dapr connects to Redpanda Kafka through a declared pub/sub component.
+Applications publish events using `POST /v1.0/publish/<pubsub>/<topic>`. No direct Kafka
+client usage.
+
+**State Management:** Dapr state store MUST manage chatbot conversation state and
+temporary task cache. State keys MUST be namespaced by `user_id`.
+
+**Service Invocation:** Frontend MUST communicate with backend through Dapr service
+invocation APIs, providing retries, service discovery, and resilience.
+
+**Jobs API:** Reminder scheduling MUST use the Dapr Jobs API. Jobs MUST trigger backend
+endpoints at the exact scheduled time derived from `remind_at`.
+
+**Secrets Management:** All sensitive configuration MUST be stored as Kubernetes Secrets
+and accessed via the Dapr secret store abstraction. No hardcoded credentials anywhere.
+
+### XVI. Redpanda / Kafka Governance
+Redpanda Cloud MUST host all Kafka topics for production. Local Minikube validation MAY
+use a Redpanda in-cluster instance. All topics MUST be declared and versioned in
+`dapr-components/`. Topic naming convention: `todo.<entity>.<event_type>`
+(e.g., `todo.task.created`, `todo.task.reminded`). Producers and consumers MUST use Dapr
+pub/sub; direct Kafka SDK usage is prohibited.
+
+### XVII. Advanced Task Features
+The following advanced features MUST be implemented as part of Phase V:
+
+**Reminder System:** Users MUST be able to set a `remind_at` timestamp on tasks. Dapr
+Jobs API MUST trigger a reminder notification at the exact scheduled time.
+
+**Due Dates:** Tasks MUST support a `due_at` field. The UI MUST surface overdue tasks
+distinctly.
+
+**Event Schema:** All task events MUST include:
+- `task_id` (UUID)
+- `title` (string)
+- `due_at` (ISO 8601 or null)
+- `remind_at` (ISO 8601 or null)
+- `user_id` (UUID)
+
+**Chatbot AI Enhancement:** The chatbot MUST understand natural language references to
+reminders and due dates (e.g., "remind me tomorrow at 9am", "due next Friday").
+
+### XVIII. CI/CD Pipeline Governance
+A CI/CD pipeline MUST be implemented using GitHub Actions. The pipeline MUST:
+1. Run all unit and integration tests
+2. Build application Docker images
+3. Validate Helm chart configurations
+4. Validate Dapr component manifests
+5. Automate deployment to Render (backend) and Vercel (frontend) on merge to main
+
+All secrets required by the pipeline MUST be stored as GitHub Actions Secrets. Pipeline
+MUST fail on test failure; no deployment on red builds.
 
 ## Agent Responsibilities
 
 ### a) Todo Intent Analyzer
 - Detect user intent from natural language
-- Extract task-related parameters (task title, task_id, status, etc.)
+- Extract task-related parameters (task title, task_id, status, due_at, remind_at)
 - Identify ambiguity and flag for clarification if needed
 - Output structured intent only; do not execute
 
 ### b) Todo Task Executor
 - Receive validated intent + parameters
 - Call MCP tools with correct parameters
+- Publish task events to Redpanda via Dapr pub/sub after successful tool execution
 - Confirm success or failure
 - Log tool_calls for response generation
 
 ### c) Conversation Persistence Agent
-- Load conversation history before execution
+- Load conversation history before execution from Dapr state store
 - Store user messages and assistant responses after execution
 - Maintain ordering and context
 
 ### d) Task Clarification Agent
-- Handle ambiguous references or missing parameters
+- Handle ambiguous references or missing parameters (including missing due_at/remind_at)
 - Ask follow-up questions politely
 - Prefer listing tasks for user selection
 
 ### e) Error Handling Agent
-- Detect errors from MCP tools or database
+- Detect errors from MCP tools, database, or Dapr APIs
 - Handle gracefully without exposing stack traces
 - Suggest corrective actions
 
 ### f) Chat Response Composer
 - Produce final user-friendly output
-- Confirm actions (e.g., task created, task deleted)
+- Confirm actions (e.g., task created, reminder set, task deleted)
 - Keep response concise, clear, and polite
 
 ### g) Cohere Embedding Agent
 - Generate semantic embeddings for messages or task descriptions
-- Assist in similarity searches (e.g., finding related tasks)
+- Assist in similarity searches (e.g., finding related tasks, detecting duplicate reminders)
 - Return embeddings in standard JSON format for agent usage
+
+### h) Reminder Scheduler Agent
+- Register Dapr Jobs for tasks with `remind_at` values
+- Receive job trigger callbacks from Dapr Jobs API
+- Publish reminder events to Kafka via Dapr pub/sub
+- Notify the user through the chatbot interface
 
 ## Conversation & Task Flow
 
 1. Receive user message via `/api/{user_id}/chat`
-2. Conversation Persistence Agent fetches history
-3. Todo Intent Analyzer interprets message
+2. Conversation Persistence Agent fetches history from Dapr state store
+3. Todo Intent Analyzer interprets message (including due/remind dates)
 4. User Scope Guard validates `user_id`
 5. Task Clarification Agent resolves ambiguities if needed
 6. Todo Task Executor calls MCP tools
-7. Cohere Embedding Agent generates embeddings if semantic search is required
-8. Error Handling Agent manages tool failures
-9. Chat Response Composer returns user-friendly response
-10. Conversation Persistence Agent stores final assistant message
+7. Reminder Scheduler Agent registers Dapr Job if `remind_at` is present
+8. Todo Task Executor publishes event to Redpanda via Dapr pub/sub
+9. Cohere Embedding Agent generates embeddings if semantic search is required
+10. Error Handling Agent manages tool or event failures
+11. Chat Response Composer returns user-friendly response
+12. Conversation Persistence Agent stores final assistant message in Dapr state store
 
 ## Natural Language → Tool Mapping
 
-| User Intent                     | MCP Tool       |
-|---------------------------------|----------------|
-| Add / Remember / Create Task     | add_task       |
-| Show / List / View Tasks         | list_tasks     |
-| Complete / Done / Finished Task  | complete_task  |
-| Delete / Remove / Cancel Task    | delete_task    |
-| Update / Change / Rename Task    | update_task    |
+| User Intent                          | MCP Tool / Action            |
+|--------------------------------------|------------------------------|
+| Add / Remember / Create Task         | add_task                     |
+| Show / List / View Tasks             | list_tasks                   |
+| Complete / Done / Finished Task      | complete_task                |
+| Delete / Remove / Cancel Task        | delete_task                  |
+| Update / Change / Rename Task        | update_task                  |
+| Remind me at / Set reminder          | update_task + Dapr Jobs API  |
+| Due date / Due by                    | update_task (due_at)         |
 
 ## Validation Rules
 
 1. **Parameter Checks**
-   - Every task operation must include `user_id`
+   - Every task operation MUST include `user_id`
    - Task ID required for complete/delete/update
    - Title required for add/update
+   - `remind_at` and `due_at` MUST be valid ISO 8601 timestamps if provided
 
 2. **Existence Checks**
-   - Tasks must exist before modifying
+   - Tasks MUST exist before modifying
    - If not found, ask user to clarify or provide alternatives
 
-3. **Response Confirmation**
-   - After every tool execution, reply with:
-     - Task title
-     - Status (created, updated, completed, deleted)
-     - Optional ID (if user wants)
+3. **Event Validation**
+   - Every published event MUST conform to the canonical Event Schema
+   - Events MUST include `task_id`, `title`, `user_id`; `due_at` and `remind_at` are nullable
+
+4. **Response Confirmation**
+   - After every tool execution, reply with: task title, status, and reminder/due date if set
 
 ## Error Handling Policy
 
 - MCP tool errors: return clear explanation
+- Dapr API errors: retry once with exponential backoff, then escalate
+- Kafka publish failure: log, retry once, then surface graceful error to user
 - Ambiguous requests: ask follow-up question
 - Missing parameters: prompt for input
 - Invalid commands: politely decline and provide guidance
@@ -188,112 +308,174 @@ Use kubectl-ai for pod debugging, Kagent for cluster health, and `kubectl logs` 
 
 ## Security & Compliance
 
-- Never expose user_id, API keys (`COHERE_API_KEY`, `BETTER_AUTH_SECRET`, `DATABASE_URL`), or backend identifiers
-- No sensitive DB or API keys in responses or container images
+- Never expose `user_id`, API keys, or backend identifiers in responses
+- No sensitive DB or API keys in container images, Dockerfiles, or Helm templates
 - Only execute permitted MCP actions
 - Reject out-of-scope requests
 - Log all actions for auditing (internal only)
-- If API keys are accidentally exposed, they must be rotated immediately
-- Secrets must be stored as Kubernetes Secrets; no hardcoded credentials in Helm templates
-- Pods must define resource requests and limits
-- RBAC must restrict access to cluster resources
+- Secrets MUST be stored as Kubernetes Secrets and accessed via Dapr secret store
+- Pods MUST define resource requests and limits
+- RBAC MUST restrict access to cluster resources
 - No API keys baked into container images
+- No privileged containers
+- Dapr mTLS MUST be enabled for inter-service communication
+- Redpanda credentials MUST be stored as Kubernetes Secrets; MUST NOT appear in source
 
 ## Response Composition Guidelines
 
 - Friendly, human-readable
 - Always acknowledge action
-- Include task details if relevant
+- Include task details (title, status, due date, reminder) if relevant
 - Concise: max 2–3 sentences per action
-- Example:
-  - `"Task 'Buy groceries' has been created successfully."`
-  - `"You have 3 pending tasks: ..."`
+- Examples:
+  - `"Task 'Buy groceries' has been created with a reminder set for tomorrow at 9am."`
+  - `"You have 3 pending tasks: 2 are due today."`
 
 ## Stateless Architecture Enforcement
 
-- Do NOT store runtime memory
+- Do NOT store runtime memory in application process
 - Agents can only access:
   - Database (Neon PostgreSQL)
+  - Dapr state store (conversation state, task cache)
   - Passed request parameters
   - Cohere API results
-- Every request independent
-- Repeatable outcomes guaranteed
+- Every request is independent and repeatable
 
 ## Key Principles
 
-1. **Spec-Driven:** Actions must reflect app spec exactly
+1. **Spec-Driven:** Actions MUST reflect app spec exactly
 2. **Safety:** Reject invalid or unauthorized requests
-3. **Consistency:** DB, backend, and frontend remain synchronized
-4. **Scalability:** Stateless design ensures any server instance can handle requests
+3. **Consistency:** DB, backend, frontend, and event log remain synchronized
+4. **Scalability:** Stateless + event-driven design ensures any instance can handle requests
 5. **User-Focused:** Responses are polite, clear, and actionable
 6. **Declarative Infrastructure:** All deployment artifacts are version-controlled and reproducible
+7. **Event-Driven:** All state changes produce Kafka events via Dapr pub/sub
 
 ## Integration Notes
 
-- Backend already exists → agents must **use existing endpoints**
+- Backend already exists → agents MUST use existing endpoints
 - MCP tools wrap backend functionality
+- Dapr sidecar handles pub/sub, state, service invocation, jobs, and secrets
+- Redpanda Cloud provides managed Kafka for event streaming
 - Cohere API adds semantic intelligence
 - OpenAI Agents SDK coordinates agents and tool execution
+- Frontend deployed on Vercel; Backend deployed on Render
 
 ## Technology Stack and Architecture Standards
 
 ### Monorepo Structure
-Use GitHub Spec-Kit conventions for monorepo organization. Frontend and backend developed in a single repository context but must be independently runnable and independently containerizable. Maintain clear boundaries between different parts of the application. Use consistent tooling and configuration across all components.
+Frontend and backend developed in a single repository. Must be independently runnable,
+containerizable, and deployable. Clear boundaries between `frontend/`, `backend/`,
+`services/`, `kubernetes/`, and `dapr-components/`. Use consistent tooling across all
+components.
 
 ### Database Standards
-Use Neon Serverless PostgreSQL for persistent storage. SQLModel for all database schema and queries. Tasks must be associated with a user_id for proper isolation. Database schema must support future feature expansion. Filtering by user_id must be enforced at query level.
+Neon Serverless PostgreSQL for persistent storage. SQLModel for all schema and queries.
+Tasks MUST be associated with `user_id`. Schema MUST support `due_at` and `remind_at`
+fields. Filtering by `user_id` MUST be enforced at query level.
 
 ### API Standards
-RESTful design with clear resource-based endpoints. All routes must be namespaced under /api. All endpoints must require authentication. API behavior must remain consistent across environments (local, containerized, Kubernetes). Input validation and error handling must use FastAPI and Pydantic standards. Responses must be JSON-serializable and predictable.
+RESTful design with clear resource-based endpoints under `/api`. All endpoints MUST
+require authentication. API behavior MUST remain consistent across local, containerized,
+and Kubernetes environments. Dapr service invocation MUST be used for frontend→backend
+communication where applicable.
 
 ### Frontend Standards
-Responsive UI suitable for desktop and mobile. Use Next.js App Router conventions. Server Components by default; Client Components only when required. Centralized API client for all backend communication. Authentication state handled exclusively via Better Auth. No direct database access from frontend.
+Responsive UI for desktop and mobile. Next.js App Router conventions. Server Components
+by default; Client Components only when required. Centralized API client. Authentication
+via Better Auth. No direct database access from frontend. Deployed on Vercel.
 
 ### Infrastructure Standards
-Docker Desktop for local container management. Minikube for local Kubernetes cluster. Helm for Kubernetes manifest management. All infrastructure must be defined declaratively and version-controlled. Container images must use slim base images, non-root users, and minimal layers. AI DevOps tools (Gordon, kubectl-ai, Kagent) assist but require human validation.
+Docker for containerization. Minikube for local Kubernetes + Dapr validation. Helm for
+manifest management. Dapr components declared under `dapr-components/`. Redpanda Cloud
+for managed Kafka. Backend on Render; Frontend on Vercel. GitHub Actions for CI/CD.
 
 ## Spec-Driven Infrastructure
 
-Infrastructure must follow the Spec → Plan → Tasks → Implementation flow. Blueprints must define container build strategy, deployment topology, scaling rules, resource allocation, and secret management. All infrastructure artifacts must be version-controlled, repeatable, and documented.
+Infrastructure MUST follow the Spec → Plan → Tasks → Implementation flow. Blueprints
+MUST define: container build strategy, Dapr component configuration, Kafka topic
+declarations, deployment topology, scaling rules, resource allocation, and secret
+management. All infrastructure artifacts MUST be version-controlled, repeatable, and
+documented.
 
 ## Development Workflow and Quality Standards
 
 ### Specification Requirements
-All features must be defined in /specs/features. All API behavior must be defined in /specs/api. All database structure must be defined in /specs/database. All UI behavior must be defined in /specs/ui. All infrastructure must be defined in /specs with deployment blueprints. Specs must be referenced explicitly when implementing features. Specs must be updated if requirements evolve.
+All features MUST be defined in `/specs/features`. All API behavior in `/specs/api`. All
+database structure in `/specs/database`. All UI behavior in `/specs/ui`. All
+infrastructure, Dapr components, and Kafka topics in `/specs` with deployment blueprints.
+Specs MUST be updated if requirements evolve.
 
 ### Testing Standards
-Implement comprehensive test coverage across all layers. Unit tests for individual components and functions. Integration tests for API endpoints and database interactions. End-to-end tests for complete user workflows. Test authentication and authorization flows thoroughly. Ensure tests cover error cases and edge conditions. Validate containerized deployments function identically to local development.
+Unit tests for individual components and functions. Integration tests for API endpoints,
+Dapr components, and database interactions. End-to-end tests for complete user workflows
+including event publishing and reminder triggering. Validate containerized deployments
+function identically to local development. CI/CD pipeline MUST block deployment on test
+failure.
 
 ### Code Quality Standards
-Follow consistent conventions across frontend and backend as defined in CLAUDE.md files. Maintain clean, readable, and well-documented code. Use appropriate error handling and validation. Follow security best practices consistently. Ensure proper separation of concerns in all components.
+Follow consistent conventions across frontend and backend as defined in `CLAUDE.md`.
+Maintain clean, readable code. Use appropriate error handling and validation. Follow
+security best practices. Ensure proper separation of concerns in all components.
 
 ## Constraints and Non-Goals
 
 ### Phase Boundaries
-Phase IV containerization and Kubernetes deployment scope. No reverting to in-memory storage. No bypassing authentication for development convenience. No hardcoded secrets in source code or container images. No deviation from defined monorepo structure. No direct tool bypass by agents. No manual kubectl edits in production environments.
+Phase V scope: event-driven architecture, Dapr runtime, advanced task features
+(reminders, due dates), Vercel + Render deployment, Redpanda Cloud event streaming,
+GitHub Actions CI/CD. No reverting to in-memory storage. No direct Kafka client usage.
+No bypassing Dapr for inter-service communication. No hardcoded secrets. No deviation
+from defined monorepo structure. No manual kubectl edits in production.
 
 ### Security Constraints
-No direct database access from frontend. No client-side user ID manipulation allowed. No shared task access between users. No authentication bypass for debugging. No hardcoded secrets in source code, Dockerfiles, or Helm templates. All sensitive data must be properly encrypted in transit and at rest. Agents may never execute unauthorized MCP actions. No API keys baked into container images. No privileged containers.
+No direct database access from frontend. No client-side user ID manipulation. No shared
+task access between users. No authentication bypass. No hardcoded secrets in source,
+Dockerfiles, Helm templates, or Dapr component manifests. All sensitive data encrypted
+in transit and at rest. Dapr mTLS enabled. No API keys baked into container images.
 
 ## Success Criteria
 
 ### Functional Requirements
-All 5 basic todo features implemented end-to-end (frontend → backend → database) with AI chatbot interface. Users can sign up and sign in successfully. Authenticated users only see their own tasks. All API endpoints require and validate JWT tokens. Data persists correctly in Neon PostgreSQL. Frontend UI correctly reflects backend state. Natural language processing works for all basic task operations.
+All 5 basic todo features plus advanced features (reminders, due dates) implemented
+end-to-end. AI chatbot understands natural language for all task operations including
+reminder and due date management. Users can sign up and sign in. Authenticated users
+only see their own tasks. Data persists in Neon PostgreSQL.
+
+### Event-Driven Requirements
+Task events published to Redpanda Kafka via Dapr pub/sub after every state change.
+Reminder jobs scheduled via Dapr Jobs API and triggered at the exact `remind_at` time.
+Dapr state store manages conversation state and task cache. No direct Kafka SDK usage.
 
 ### Infrastructure Requirements
-Frontend and backend are containerized with proper Docker images. Helm chart deploys successfully on Minikube. All pods are healthy and pass readiness checks. Services are reachable within the cluster. Todo chatbot functions correctly inside Kubernetes. Infrastructure is fully reproducible from version-controlled artifacts.
+Frontend on Vercel; backend on Render; Kafka on Redpanda Cloud. Minikube + Dapr runtime
+validates microservices architecture locally. Helm charts deploy cleanly. CI/CD pipeline
+runs tests and deploys automatically on merge to main.
 
 ### Quality Requirements
-Codebase is clean, maintainable, and production-ready. Agentic development workflow is fully reproducible and reviewable. Proper error handling and user feedback throughout the application. Responsive design that works on multiple device sizes. Performance meets reasonable expectations for a todo application. Proper logging and observability for operational concerns. AI agents respond appropriately to natural language inputs.
+Codebase is clean, maintainable, and production-ready. Proper error handling throughout.
+Responsive design. Logging captures service events, Kafka activity, and reminder triggers.
+Monitoring tracks service health, event throughput, and API latency.
 
 ## Governance
 
-Specifications serve as the authoritative source for all implementation decisions. Any deviations from specifications must be documented and approved. All architectural decisions that meet significance criteria must be recorded as ADRs. All user interactions must be captured as PHRs for auditability. Development team members must follow the established agentic development workflow. This constitution governs ALL agents in the Phase IV Todo AI Chatbot. Agents must follow these rules strictly to maintain reliability, security, and alignment with the full-stack backend and infrastructure.
+Specifications serve as the authoritative source for all implementation decisions. Any
+deviations from specifications MUST be documented and approved. All architecturally
+significant decisions MUST be recorded as ADRs. All user interactions MUST be captured
+as PHRs for auditability. This constitution governs ALL agents in the Phase V Event-Driven
+Todo AI Chatbot. Agents MUST follow these rules strictly to maintain reliability, security,
+and alignment with the full-stack, event-driven, distributed system.
 
 ### Amendment Procedure
-Constitution amendments require review and explicit approval. Version follows semantic versioning: MAJOR for governance redefinitions or principle removals, MINOR for new principles or material expansions, PATCH for clarifications and wording fixes. All amendments must update the Sync Impact Report and propagate changes to dependent templates.
+Constitution amendments require review and explicit approval. Version follows semantic
+versioning: MAJOR for governance redefinitions or principle removals, MINOR for new
+principles or material expansions, PATCH for clarifications and wording fixes. All
+amendments MUST update the Sync Impact Report and propagate changes to dependent
+templates.
 
 ### Compliance Review
-All infrastructure changes must be validated against this constitution before deployment. AI-generated artifacts (Dockerfiles, Helm charts, manifests) must be reviewed by a human before application. Periodic compliance audits should verify adherence to declared principles.
+All infrastructure and Dapr component changes MUST be validated against this constitution
+before deployment. AI-generated artifacts (Dockerfiles, Helm charts, Dapr manifests) MUST
+be reviewed by a human before application. Periodic compliance audits MUST verify
+adherence to declared principles.
 
-**Version**: 3.0.0 | **Ratified**: 2026-01-30 | **Last Amended**: 2026-02-19
+**Version**: 4.0.0 | **Ratified**: 2026-01-30 | **Last Amended**: 2026-03-07

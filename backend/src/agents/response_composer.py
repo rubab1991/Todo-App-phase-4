@@ -1,3 +1,8 @@
+"""
+Response Composer — Phase V.
+Builds user-friendly chatbot responses for all task operations including
+search/filter results, validation errors, and reminder notifications.
+"""
 from typing import Dict, Any, List, Optional
 from .error_handler import handle_error
 
@@ -5,59 +10,68 @@ from .error_handler import handle_error
 def compose_response(
     task_result: Dict[str, Any],
     intent_result: Dict[str, Any],
-    user_info: Optional[Dict[str, Any]] = None
+    user_info: Optional[Dict[str, Any]] = None,
 ) -> str:
-    """
-    Compose a user-friendly response based on task result and intent
-    """
     intent = intent_result.get("intent", "")
     original_message = intent_result.get("original_message", "")
     user_info = user_info or {}
 
-    # Check if there was an error in task execution
+    # Validation errors (e.g. past reminder)
+    if task_result.get("status") == "validation_error":
+        err = task_result.get("validation_error", "Invalid input.")
+        return f"I couldn't save that: {err}"
+
     if task_result.get("status") == "error":
         error_msg = task_result.get("result", {}).get("error", "Unknown error occurred")
         return f"Sorry, I encountered an error: {error_msg}"
 
-    # Get the operations performed
     operations = task_result.get("operations", [])
 
-    # Compose response based on intent and operations
     if intent == "add_task":
         if operations:
             op = operations[0]
             if op.get("status") == "success":
-                return f"Task '{op.get('title', 'unnamed')}' has been added successfully. ✅"
+                parts = [f"Task '{op.get('title', 'unnamed')}' added successfully!"]
+                if op.get("priority"):
+                    parts.append(f"Priority: {op['priority']}")
+                if op.get("tags"):
+                    parts.append(f"Tags: {', '.join(op['tags'])}")
+                if op.get("dueDate"):
+                    parts.append(f"Due: {op['dueDate']}")
+                if op.get("reminderAt"):
+                    parts.append(f"Reminder set for {op['reminderAt']}")
+                if op.get("recurringInterval"):
+                    parts.append(f"Repeats {op['recurringInterval']}")
+                return " | ".join(parts)
         return "I tried to add your task, but something went wrong."
 
-    elif intent == "list_tasks":
+    elif intent in ("list_tasks", "search_tasks"):
         if operations:
             op = operations[0]
             task_count = op.get("count", 0)
             if op.get("status") == "success":
                 if task_count == 0:
-                    filter_status = op.get("filter", "all")
-                    if filter_status == "pending":
-                        return "You have no pending tasks. You're all caught up!"
-                    elif filter_status == "completed":
-                        return "You haven't completed any tasks yet."
+                    # T029/T033: "no matching tasks" message
+                    if op.get("search_query") or op.get("filter") not in (None, "all"):
+                        return "No tasks found matching your criteria."
                     return "You have no tasks at the moment. Try adding one!"
-                # Build task list display
                 tasks = op.get("tasks", [])
-                filter_status = op.get("filter", "all")
-                if filter_status == "pending":
-                    header = f"You have {task_count} pending task{'s' if task_count != 1 else ''}:"
-                elif filter_status == "completed":
-                    header = f"You have {task_count} completed task{'s' if task_count != 1 else ''}:"
-                else:
-                    header = f"Here are your {task_count} task{'s' if task_count != 1 else ''}:"
+                header = f"Here are your {task_count} task{'s' if task_count != 1 else ''}:"
+                if op.get("search_query"):
+                    header = f"Found {task_count} task{'s' if task_count != 1 else ''} matching '{op['search_query']}':"
                 lines = [header]
                 for task in tasks:
                     task_id = task.get("id", "?")
                     title = task.get("title", "Untitled")
-                    status = task.get("status", "pending")
+                    status = "completed" if task.get("isComplete") else "pending"
+                    priority = task.get("priority", "medium")
+                    tags = task.get("tags", [])
+                    due = task.get("dueDate", "")
                     status_icon = "✅" if status == "completed" else "⏳"
-                    lines.append(f"  {status_icon} #{task_id}: {title}")
+                    prio_icon = {"high": "🔴", "medium": "🟡", "low": "🟢"}.get(priority, "")
+                    tag_str = f" [{', '.join(tags)}]" if tags else ""
+                    due_str = f" (due {due})" if due else ""
+                    lines.append(f"  {status_icon} {prio_icon} #{task_id}: {title}{tag_str}{due_str}")
                 return "\n".join(lines)
         return "I couldn't retrieve your tasks. Please try again."
 
@@ -65,82 +79,59 @@ def compose_response(
         if operations:
             op = operations[0]
             if op.get("status") == "success":
-                return f"Task #{op.get('task_id')} has been updated successfully. 📝"
+                return f"Task #{op.get('task_id')} updated successfully."
         return "I couldn't update your task. Please try again."
 
     elif intent == "complete_task":
         if operations:
             op = operations[0]
             if op.get("status") == "success":
-                return f"Task #{op.get('task_id')} has been completed. ✅"
+                return f"Task #{op.get('task_id')} marked complete! ✅"
         return "I couldn't complete your task. Please try again."
 
     elif intent == "delete_task":
         if operations:
             op = operations[0]
             if op.get("status") == "success":
-                return f"Task #{op.get('task_id')} has been deleted. ❌"
+                return f"Task #{op.get('task_id')} deleted."
         return "I couldn't delete your task. Please try again."
 
     elif intent == "greeting":
         user_name = user_info.get("name")
         if user_name:
-            return f"Hello, {user_name}! I'm your AI task manager. You can ask me to add, list, update, complete, or delete tasks."
-        return "Hello! I'm your AI task manager. You can ask me to add, list, update, complete, or delete tasks."
+            return f"Hello, {user_name}! I'm your AI task manager. Ask me to add, search, sort, or manage tasks."
+        return "Hello! I'm your AI task manager. You can add, search, filter, sort, and manage tasks."
 
     elif intent == "help_request":
-        return ("I can help you manage your tasks! Here's what I can do:\n"
-                "- Add tasks: 'Add task: Buy groceries' or 'Remember to pay bills'\n"
-                "- List tasks: 'Show my tasks', 'What's pending?', 'What have I completed?'\n"
-                "- Complete tasks: 'Mark task #1 as complete'\n"
-                "- Update tasks: 'Change task #1 to Call mom tonight'\n"
-                "- Delete tasks: 'Delete task #1'\n"
-                "- Identity: 'Who am I?' to see your account info")
+        return (
+            "Here's what I can do:\n"
+            "- Add: 'Create a high-priority task: submit report, tagged work'\n"
+            "- Search: 'Show all high-priority tasks tagged work'\n"
+            "- Sort: 'List tasks sorted by due date'\n"
+            "- Due dates: 'Add task: file taxes, due April 15'\n"
+            "- Reminders: 'Remind me April 10 at 9am'\n"
+            "- Recurring: 'Add daily task: team standup'\n"
+            "- Complete: 'Mark task #1 as complete'\n"
+            "- Delete: 'Delete task #2'"
+        )
 
     elif intent == "identity":
         msg_lower = original_message.lower().strip()
         if "who are you" in msg_lower or "what are you" in msg_lower:
-            return ("I'm your AI task manager assistant! I can help you add, list, "
-                    "update, complete, and delete tasks. Just ask!")
-        # User asking about themselves
-        user_name = user_info.get("name")
+            return "I'm your AI task manager — I can create, search, sort, and manage tasks."
         user_email = user_info.get("email")
+        user_name = user_info.get("name")
         if user_name and user_email:
-            return f"You are {user_name} ({user_email}). How can I help you with your tasks today?"
+            return f"You are {user_name} ({user_email})."
         elif user_email:
-            return f"You are logged in as {user_email}. How can I help you with your tasks today?"
-        elif user_name:
-            return f"You are {user_name}. How can I help you with your tasks today?"
-        return "I know you're logged in, but I don't have your name or email details. How can I help you with your tasks?"
+            return f"Logged in as {user_email}."
+        return "I know you're logged in but don't have your profile details."
 
     else:
-        # General fallback for unrecognized intents
         msg_lower = original_message.lower().strip()
-
-        # Thank you
-        if any(phrase in msg_lower for phrase in ["thank", "thanks", "thx"]):
+        if any(p in msg_lower for p in ("thank", "thanks", "thx")):
             return "You're welcome! Let me know if you need anything else."
-
-        return ("I'm not sure how to help with that, but I can manage your tasks! "
-                "Try saying things like 'add task: buy groceries' or 'show my tasks'.")
-
-def format_task_status(task_operation: Dict[str, Any]) -> str:
-    """
-    Format task status for display
-    """
-    operation = task_operation.get("operation", "")
-    status = task_operation.get("status", "")
-
-    if status != "success":
-        return f"❌ Operation failed: {operation}"
-
-    if operation == "create":
-        return f"✅ Task created: {task_operation.get('title', 'unnamed')}"
-    elif operation == "update":
-        return f"📝 Task updated: #{task_operation.get('task_id', 'unknown')}"
-    elif operation == "complete":
-        return f"✅ Task completed: #{task_operation.get('task_id', 'unknown')}"
-    elif operation == "delete":
-        return f"❌ Task deleted: #{task_operation.get('task_id', 'unknown')}"
-    else:
-        return f"ℹ️ {operation.capitalize()} operation completed"
+        return (
+            "I'm not sure how to help with that. Try: 'add task: buy groceries', "
+            "'show high-priority tasks', or 'list tasks sorted by due date'."
+        )

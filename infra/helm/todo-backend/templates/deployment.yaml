@@ -13,6 +13,12 @@ spec:
     metadata:
       labels:
         {{- include "todo-backend.selectorLabels" . | nindent 8 }}
+      annotations:
+        dapr.io/enabled: "true"
+        dapr.io/app-id: "todo-backend"
+        dapr.io/app-port: "{{ .Values.containerPort }}"
+        dapr.io/log-level: "info"
+        dapr.io/enable-metrics: "true"
     spec:
       securityContext:
         runAsNonRoot: {{ .Values.securityContext.runAsNonRoot }}
@@ -44,6 +50,10 @@ spec:
                 secretKeyRef:
                   name: todo-secrets
                   key: COHERE_API_KEY
+            - name: DAPR_HTTP_PORT
+              value: "3500"
+            - name: DAPR_APP_ID
+              value: "todo-backend"
           resources:
             requests:
               cpu: {{ .Values.resources.requests.cpu }}

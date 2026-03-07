@@ -7,7 +7,7 @@ export interface UserSession {
   isLoading: boolean;
 }
 
-// Task Type
+// Task Type (Phase V — includes tags, recurring, reminder)
 export interface Task {
   id: string;
   title: string;
@@ -18,14 +18,21 @@ export interface Task {
   userId: string;
   createdAt: string;
   updatedAt: string;
+  // Phase V fields
+  tags: string[];
+  recurringInterval?: 'daily' | 'weekly' | 'monthly' | null;
+  reminderAt?: string | null;
 }
 
-// Filter/Sort Configuration Type
+// Filter/Sort Configuration Type (Phase V)
 export interface FilterSortConfig {
   filterBy: 'all' | 'active' | 'completed';
   sortBy: 'dueDate' | 'priority' | 'createdAt' | 'title';
   sortOrder: 'asc' | 'desc';
   searchQuery: string;
+  // Phase V filters
+  filterPriority?: 'all' | 'low' | 'medium' | 'high';
+  filterTag?: string;
 }
 
 // API Response State Type
@@ -54,6 +61,16 @@ export interface TaskFormState {
   isValid: boolean;
   isSubmitting: boolean;
   errors: Record<string, string>;
+}
+
+// WebSocket task update event (Phase V)
+export interface TaskUpdateEvent {
+  type: 'task_update' | 'reminder';
+  event_type?: string;   // "task.created" | "task.updated" | "task.deleted"
+  task?: Partial<Task> & { id: string | number };
+  task_id?: string;
+  title?: string;
+  message?: string;
 }
 
 // Task Display Options Type

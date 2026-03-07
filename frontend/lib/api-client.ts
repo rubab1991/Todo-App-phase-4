@@ -84,14 +84,41 @@ export const taskApi = {
   /**
    * Get all tasks for a user
    */
-  async getAllTasks(user_id: string, token?: string): Promise<Task[]> {
-    return apiRequest<Task[]>(`/${user_id}/tasks`, { method: 'GET' }, user_id, token);
+  async getAllTasks(
+    user_id: string,
+    token?: string,
+    // T032: Phase V search/filter/sort params
+    params?: {
+      search?: string;
+      priority?: string;
+      tag?: string;
+      status?: string;
+      sort_by?: string;
+      sort_order?: string;
+    }
+  ): Promise<Task[]> {
+    const query = params
+      ? '?' + Object.entries(params)
+          .filter(([, v]) => v && v !== 'all')
+          .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v!)}`)
+          .join('&')
+      : '';
+    return apiRequest<Task[]>(`/${user_id}/tasks${query}`, { method: 'GET' }, user_id, token);
   },
 
   /**
    * Create a new task
    */
-  async createTask(user_id: string, taskData: Omit<Task, 'id' | 'userId' | 'createdAt' | 'updatedAt'>, token?: string): Promise<Task> {
+  async createTask(
+    user_id: string,
+    taskData: Omit<Task, 'id' | 'userId' | 'createdAt' | 'updatedAt'> & {
+      // T026/T046/T055: Phase V fields
+      tags?: string[];
+      reminderAt?: string | null;
+      recurringInterval?: string | null;
+    },
+    token?: string
+  ): Promise<Task> {
     return apiRequest<Task>(`/${user_id}/tasks`, {
       method: 'POST',
       body: JSON.stringify(taskData),
@@ -108,7 +135,16 @@ export const taskApi = {
   /**
    * Update a task
    */
-  async updateTask(user_id: string, taskId: string, taskData: Partial<Task>, token?: string): Promise<Task> {
+  async updateTask(
+    user_id: string,
+    taskId: string,
+    taskData: Partial<Task> & {
+      tags?: string[];
+      reminderAt?: string | null;
+      recurringInterval?: string | null;
+    },
+    token?: string
+  ): Promise<Task> {
     return apiRequest<Task>(`/${user_id}/tasks/${taskId}`, {
       method: 'PUT',
       body: JSON.stringify(taskData),
