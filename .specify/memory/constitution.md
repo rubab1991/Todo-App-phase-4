@@ -1,32 +1,32 @@
 <!-- SYNC IMPACT REPORT
-Version change: 3.0.0 → 4.0.0
-Bump rationale: MAJOR — Phase V introduces a fundamentally new architectural paradigm:
-event-driven architecture via Kafka/Redpanda, Dapr distributed runtime building blocks
-(pub/sub, state store, service invocation, jobs API, secrets management), new cloud
-deployment targets (Vercel, Render, Redpanda Cloud), GitHub Actions CI/CD pipeline,
-and advanced task features (reminders, due dates, event schema). This redefines the
-operational scope, infrastructure model, and distributed system contract.
+Version change: 4.0.0 → 4.1.0
+Bump rationale: MINOR — Deployment platform corrected from Render to Railway with
+explicit production URL (https://web-production-7458d.up.railway.app/). Kafka topic
+names enumerated explicitly (task-events, task-updates, task-reminders, audit-events).
+Backend start command specified (uvicorn app.main:app --host 0.0.0.0 --port $PORT).
+Frontend environment variable NEXT_PUBLIC_API_URL added. Local Dapr run command
+(dapr run --app-id todo-backend) codified.
 
 Modified principles:
-- "VI. Extensibility and Cloud-Native Readiness" → "VI. Extensibility and Event-Driven Readiness"
-- "XII. Deployment Flow" → updated to reflect Vercel + Render + Redpanda Cloud targets
-- "XIII. Observability and Debugging" → expanded with Kafka message and reminder logging
+- "XII. Deployment Flow" → step 6 updated: Render → Railway; production URL added
+- "XV. Dapr Runtime Governance" → local run command added
+- "XVI. Redpanda / Kafka Governance" → topic names now explicitly enumerated
+- "XVIII. CI/CD Pipeline Governance" → step 5 updated: Render → Railway
 
-Added sections:
-- XIV. Event-Driven Architecture Governance
-- XV. Dapr Runtime Governance
-- XVI. Redpanda / Kafka Governance
-- XVII. Advanced Task Features
-- XVIII. CI/CD Pipeline Governance
-- Phase V Success Criteria
+Modified sections:
+- Integration Notes: "Backend deployed on Render" → "Backend deployed on Railway"
+- Infrastructure Standards: "Backend on Render" → "Backend on Railway"
+- Phase Boundaries: "Vercel + Render deployment" → "Vercel + Railway deployment"
+- Success Criteria / Infrastructure Requirements: updated Railway references
+- Frontend Standards: NEXT_PUBLIC_API_URL documented
 
-Removed sections: None (all Phase IV content preserved and extended)
+Added sections: None
+
+Removed sections: None
 
 Templates requiring updates:
-- .specify/templates/plan-template.md — ⚠ pending (should reference Dapr + event
-  infrastructure principles; no breaking change)
-- .specify/templates/tasks-template.md — ⚠ pending (task phases should include
-  event infrastructure setup; no breaking change)
+- .specify/templates/plan-template.md — ✅ no breaking change (generic template)
+- .specify/templates/tasks-template.md — ✅ no breaking change (generic template)
 - .specify/templates/spec-template.md — ✅ no update needed
 
 Follow-up TODOs: None
@@ -118,8 +118,10 @@ Infrastructure deployment MUST follow this sequence:
 3. Deploy to Minikube with Dapr sidecar injection
 4. Verify pods and Dapr sidecars are running
 5. Validate Kafka event publishing via Redpanda Console
-6. Deploy backend to Render; deploy frontend to Vercel
-7. Validate chatbot functionality end-to-end (local + cloud)
+6. Deploy backend to Railway (`uvicorn app.main:app --host 0.0.0.0 --port $PORT`);
+   deploy frontend to Vercel
+7. Validate chatbot functionality end-to-end using production URL:
+   `https://web-production-7458d.up.railway.app/`
 
 ### XIII. Observability and Debugging
 Logging MUST capture: service events, errors, Kafka message activity, and reminder
@@ -155,12 +157,20 @@ endpoints at the exact scheduled time derived from `remind_at`.
 **Secrets Management:** All sensitive configuration MUST be stored as Kubernetes Secrets
 and accessed via the Dapr secret store abstraction. No hardcoded credentials anywhere.
 
+**Local Development:** The backend MUST be started with Dapr sidecar using:
+`dapr run --app-id todo-backend`
+
 ### XVI. Redpanda / Kafka Governance
 Redpanda Cloud MUST host all Kafka topics for production. Local Minikube validation MAY
 use a Redpanda in-cluster instance. All topics MUST be declared and versioned in
-`dapr-components/`. Topic naming convention: `todo.<entity>.<event_type>`
-(e.g., `todo.task.created`, `todo.task.reminded`). Producers and consumers MUST use Dapr
-pub/sub; direct Kafka SDK usage is prohibited.
+`dapr-components/`. The following topics MUST be created and used:
+
+- `task-events` — general task lifecycle events (create, update, delete, complete)
+- `task-updates` — task field update events
+- `task-reminders` — reminder trigger events
+- `audit-events` — audit log entries for compliance
+
+Producers and consumers MUST use Dapr pub/sub; direct Kafka SDK usage is prohibited.
 
 ### XVII. Advanced Task Features
 The following advanced features MUST be implemented as part of Phase V:
@@ -187,7 +197,7 @@ A CI/CD pipeline MUST be implemented using GitHub Actions. The pipeline MUST:
 2. Build application Docker images
 3. Validate Helm chart configurations
 4. Validate Dapr component manifests
-5. Automate deployment to Render (backend) and Vercel (frontend) on merge to main
+5. Automate deployment to Railway (backend) and Vercel (frontend) on merge to main
 
 All secrets required by the pipeline MUST be stored as GitHub Actions Secrets. Pipeline
 MUST fail on test failure; no deployment on red builds.
@@ -235,7 +245,7 @@ MUST fail on test failure; no deployment on red builds.
 ### h) Reminder Scheduler Agent
 - Register Dapr Jobs for tasks with `remind_at` values
 - Receive job trigger callbacks from Dapr Jobs API
-- Publish reminder events to Kafka via Dapr pub/sub
+- Publish reminder events to `task-reminders` topic via Dapr pub/sub
 - Notify the user through the chatbot interface
 
 ## Conversation & Task Flow
@@ -359,7 +369,8 @@ MUST fail on test failure; no deployment on red builds.
 - Redpanda Cloud provides managed Kafka for event streaming
 - Cohere API adds semantic intelligence
 - OpenAI Agents SDK coordinates agents and tool execution
-- Frontend deployed on Vercel; Backend deployed on Render
+- Frontend deployed on Vercel; Backend deployed on Railway
+- Production backend URL: `https://web-production-7458d.up.railway.app/`
 
 ## Technology Stack and Architecture Standards
 
@@ -383,12 +394,14 @@ communication where applicable.
 ### Frontend Standards
 Responsive UI for desktop and mobile. Next.js App Router conventions. Server Components
 by default; Client Components only when required. Centralized API client. Authentication
-via Better Auth. No direct database access from frontend. Deployed on Vercel.
+via Better Auth. No direct database access from frontend. Frontend MUST use
+`NEXT_PUBLIC_API_URL` (set to `https://web-production-7458d.up.railway.app/`) to
+communicate with the backend. Deployed on Vercel.
 
 ### Infrastructure Standards
 Docker for containerization. Minikube for local Kubernetes + Dapr validation. Helm for
 manifest management. Dapr components declared under `dapr-components/`. Redpanda Cloud
-for managed Kafka. Backend on Render; Frontend on Vercel. GitHub Actions for CI/CD.
+for managed Kafka. Backend on Railway; Frontend on Vercel. GitHub Actions for CI/CD.
 
 ## Spec-Driven Infrastructure
 
@@ -422,7 +435,7 @@ security best practices. Ensure proper separation of concerns in all components.
 
 ### Phase Boundaries
 Phase V scope: event-driven architecture, Dapr runtime, advanced task features
-(reminders, due dates), Vercel + Render deployment, Redpanda Cloud event streaming,
+(reminders, due dates), Vercel + Railway deployment, Redpanda Cloud event streaming,
 GitHub Actions CI/CD. No reverting to in-memory storage. No direct Kafka client usage.
 No bypassing Dapr for inter-service communication. No hardcoded secrets. No deviation
 from defined monorepo structure. No manual kubectl edits in production.
@@ -443,13 +456,15 @@ only see their own tasks. Data persists in Neon PostgreSQL.
 
 ### Event-Driven Requirements
 Task events published to Redpanda Kafka via Dapr pub/sub after every state change.
+Topics used: `task-events`, `task-updates`, `task-reminders`, `audit-events`.
 Reminder jobs scheduled via Dapr Jobs API and triggered at the exact `remind_at` time.
 Dapr state store manages conversation state and task cache. No direct Kafka SDK usage.
 
 ### Infrastructure Requirements
-Frontend on Vercel; backend on Render; Kafka on Redpanda Cloud. Minikube + Dapr runtime
-validates microservices architecture locally. Helm charts deploy cleanly. CI/CD pipeline
-runs tests and deploys automatically on merge to main.
+Frontend on Vercel; backend on Railway (`https://web-production-7458d.up.railway.app/`);
+Kafka on Redpanda Cloud. Minikube + Dapr runtime validates microservices architecture
+locally. Helm charts deploy cleanly. CI/CD pipeline runs tests and deploys automatically
+on merge to main.
 
 ### Quality Requirements
 Codebase is clean, maintainable, and production-ready. Proper error handling throughout.
@@ -478,4 +493,4 @@ before deployment. AI-generated artifacts (Dockerfiles, Helm charts, Dapr manife
 be reviewed by a human before application. Periodic compliance audits MUST verify
 adherence to declared principles.
 
-**Version**: 4.0.0 | **Ratified**: 2026-01-30 | **Last Amended**: 2026-03-07
+**Version**: 4.1.0 | **Ratified**: 2026-01-30 | **Last Amended**: 2026-03-10
