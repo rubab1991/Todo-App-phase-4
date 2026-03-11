@@ -7,14 +7,10 @@ from src.mcp.mcp_tools import add_task, list_tasks, update_task, complete_task, 
 @pytest.mark.asyncio
 async def test_add_task_success():
     """Test successful task creation"""
-    with patch('src.mcp.mcp_tools.AsyncSessionLocal') as mock_session:
+    with patch('src.mcp.mcp_tools.AsyncSessionLocal') as mock_session, \
+         patch('src.mcp.mcp_tools.get_or_create_user', new_callable=AsyncMock):
         mock_session_instance = AsyncMock()
         mock_session.return_value.__aenter__.return_value = mock_session_instance
-
-        # Mock the task object
-        mock_task = MagicMock()
-        mock_task.id = 1
-        mock_task.title = "Test task"
 
         mock_session_instance.add = MagicMock()
         mock_session_instance.commit = AsyncMock()
@@ -34,17 +30,25 @@ async def test_list_tasks_success():
         mock_session_instance = AsyncMock()
         mock_session.return_value.__aenter__.return_value = mock_session_instance
 
-        # Mock the result
-        mock_result = AsyncMock()
         mock_task = MagicMock()
         mock_task.id = 1
         mock_task.title = "Test task"
         mock_task.status = "pending"
         mock_task.description = "Test description"
-        mock_task.created_at = "2023-01-01T00:00:00"
-        mock_result.scalars().all.return_value = [mock_task]
+        mock_task.priority = "medium"
+        mock_task.tags = None
+        mock_task.due_date = None
+        mock_task.recurring_interval = None
+        mock_task.reminder_at = None
+        mock_task.created_at = MagicMock()
+        mock_task.created_at.isoformat.return_value = "2023-01-01T00:00:00"
 
-        mock_session_instance.execute.return_value = mock_result
+        # Build the mock chain: session.execute() -> result.scalars() -> .all() -> [mock_task]
+        mock_scalars = MagicMock()
+        mock_scalars.all.return_value = [mock_task]
+        mock_result = MagicMock()
+        mock_result.scalars.return_value = mock_scalars
+        mock_session_instance.execute = AsyncMock(return_value=mock_result)
 
         result = await list_tasks(user_id="test_user", status="all")
 
@@ -61,14 +65,13 @@ async def test_update_task_success():
         mock_session_instance = AsyncMock()
         mock_session.return_value.__aenter__.return_value = mock_session_instance
 
-        # Mock the result
         mock_scalar_result = MagicMock()
         mock_scalar_result.id = 1
         mock_scalar_result.title = "Updated task"
-        mock_result = AsyncMock()
+        mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = mock_scalar_result
 
-        mock_session_instance.execute.return_value = mock_result
+        mock_session_instance.execute = AsyncMock(return_value=mock_result)
         mock_session_instance.commit = AsyncMock()
         mock_session_instance.refresh = AsyncMock()
 
@@ -86,15 +89,14 @@ async def test_complete_task_success():
         mock_session_instance = AsyncMock()
         mock_session.return_value.__aenter__.return_value = mock_session_instance
 
-        # Mock the result
         mock_scalar_result = MagicMock()
         mock_scalar_result.id = 1
         mock_scalar_result.title = "Test task"
         mock_scalar_result.status = "pending"
-        mock_result = AsyncMock()
+        mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = mock_scalar_result
 
-        mock_session_instance.execute.return_value = mock_result
+        mock_session_instance.execute = AsyncMock(return_value=mock_result)
         mock_session_instance.commit = AsyncMock()
         mock_session_instance.refresh = AsyncMock()
 
@@ -112,15 +114,14 @@ async def test_delete_task_success():
         mock_session_instance = AsyncMock()
         mock_session.return_value.__aenter__.return_value = mock_session_instance
 
-        # Mock the result
         mock_scalar_result = MagicMock()
         mock_scalar_result.id = 1
         mock_scalar_result.title = "Test task"
-        mock_result = AsyncMock()
+        mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = mock_scalar_result
 
-        mock_session_instance.execute.return_value = mock_result
-        mock_session_instance.delete = MagicMock()
+        mock_session_instance.execute = AsyncMock(return_value=mock_result)
+        mock_session_instance.delete = AsyncMock()
         mock_session_instance.commit = AsyncMock()
 
         result = await delete_task(user_id="test_user", task_id=1)
@@ -144,11 +145,11 @@ async def test_list_tasks_invalid_status():
         mock_session_instance = AsyncMock()
         mock_session.return_value.__aenter__.return_value = mock_session_instance
 
-        # Mock the result
-        mock_result = AsyncMock()
-        mock_result.scalars().all.return_value = []
-
-        mock_session_instance.execute.return_value = mock_result
+        mock_scalars = MagicMock()
+        mock_scalars.all.return_value = []
+        mock_result = MagicMock()
+        mock_result.scalars.return_value = mock_scalars
+        mock_session_instance.execute = AsyncMock(return_value=mock_result)
 
         result = await list_tasks(user_id="test_user", status="invalid_status")
 

@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from ..models import Task, TaskRead, TaskCreate, TaskUpdate
 from ..db import get_async_session_dep, get_or_create_user
 from ..auth import verify_user_id_match_with_email
-from ..services.event_publisher import publish_task_event, publish_reminder_event
+from ..services.event_publisher import publish_task_event, publish_reminder_event, publish_audit_event
 from ..services.dapr_jobs import schedule_reminder, cancel_reminder
 from ..utils.tags import normalise_tags
 from ..utils.validation import validate_reminder_at
@@ -163,6 +163,7 @@ async def create_task(
         task_dict = _task_to_dict(task)
 
         await publish_task_event("task.created", task_dict, user_id)
+        await publish_audit_event("task_created", task_dict, user_id)
 
         if task.reminder_at and task.id:
             await schedule_reminder(task.id, user_id, task.title, task.reminder_at)
@@ -243,6 +244,7 @@ async def update_task(
 
         task_dict = _task_to_dict(task)
         await publish_task_event("task.updated", task_dict, user_id)
+        await publish_audit_event("task_updated", task_dict, user_id)
 
         if "reminderAt" in update_data and task.reminder_at:
             await cancel_reminder(task_id, user_id)
@@ -281,6 +283,7 @@ async def delete_task(
         await session.delete(task)
         await session.commit()
         await publish_task_event("task.deleted", task_dict, user_id)
+        await publish_audit_event("task_deleted", task_dict, user_id)
         await cancel_reminder(task_id, user_id)
     except Exception as e:
         logger.error("Error deleting task: %s", e)
@@ -314,6 +317,7 @@ async def toggle_task_completion(
 
         task_dict = _task_to_dict(task)
         await publish_task_event("task.updated", task_dict, user_id)
+        await publish_audit_event("task_completed", task_dict, user_id)
         return task_dict
     except Exception as e:
         logger.error("Error toggling task: %s", e)

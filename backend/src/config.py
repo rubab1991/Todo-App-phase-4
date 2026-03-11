@@ -15,6 +15,10 @@ class Settings(BaseSettings):
     better_auth_url: Optional[str] = "http://localhost:3000"
     # AI/ML services
     cohere_api_key: str = ""
+    # Redpanda / Kafka (Phase V)
+    redpanda_bootstrap_servers: str = ""
+    redpanda_username: str = ""
+    redpanda_password: str = ""
     # Application settings
     debug: str = "false"
     log_level: str = "info"

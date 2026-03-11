@@ -40,8 +40,8 @@ async def dapr_subscribe():
         },
         {
             "pubsubname": PUBSUB_NAME,
-            "topic": "reminders",
-            "route": "/dapr/events/reminders",
+            "topic": "task-reminders",
+            "route": "/dapr/events/task-reminders",
         },
         {
             "pubsubname": PUBSUB_NAME,
@@ -72,8 +72,8 @@ async def handle_task_updates(event: DaprEventEnvelope):
 
 # ── reminders handler ─────────────────────────────────────────────────────────
 
-@router.post("/events/reminders")
-async def handle_reminders(event: DaprEventEnvelope):
+@router.post("/events/task-reminders")
+async def handle_task_reminders(event: DaprEventEnvelope):
     """
     Receive reminder events and push WebSocket notifications to the user.
     """
